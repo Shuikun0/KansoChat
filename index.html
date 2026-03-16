@@ -1318,7 +1318,7 @@ if (!currentChat || currentChat.history.length === 0) {
 
     function handleSendAction() {
         const apiKey = dom.apiKey.value.trim(), text = dom.input.value.trim(), model = dom.modelSelect.value; 
-        if (!apiKey) { switchTab('tab-system'); openSettings(); return alert('请先设置您的 API Key。'); }
+        if (!apiKey) { switchTab('tab-system'); openSettings(); return alert('初次使用，请设置你的 API Key'); }
         if (!text) return;
 
         collapseInput(); dom.input.value = ''; dom.input.style.height = '40px';
