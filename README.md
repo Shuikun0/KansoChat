@@ -2,9 +2,9 @@
 
 一个**可连发问题无需等待**的纯前端 AI 对话面板。单文件，零依赖，没有后端数据库，没有复杂的构建配置。KansoChat 的目标是：提供一个流畅、顺手、但又克制的文字交互环境。
 
-![KansoChat Preview](./preview.png)
-
 >🍃 注：本项目极度克制（我已经禁食145天！），目前仅适配并支持 Google Gemini API。**
+
+![KansoChat Preview](./preview.png)
 
 <p align="center">
   <br />
