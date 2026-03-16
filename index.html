@@ -1168,25 +1168,77 @@
     function renderChatArea() {
         dom.chatArea.style.display = 'none';
         dom.chatArea.innerHTML = '';
+        dom.chatArea.style.height = '';
+        dom.chatArea.style.alignItems = '';
+        dom.chatArea.style.justifyContent = '';
         
         const currentChat = chats.find(c => c.id === currentChatId);
-        if (!currentChat || currentChat.history.length === 0) {
-            dom.chatArea.innerHTML = `
-                <div style="text-align:center; color:var(--text-muted); margin-top: 15vh;">
-                    <h2 style="font-weight: 500; letter-spacing: 1px;">KansoChat</h2>
-                    <p style="font-size:14px; line-height: 2.5; color: var(--text-muted);">
-                        [ <b>Cmd + Enter</b> ] 发送消息 <br>
-                        [ <b>Cmd + K</b> ] 插入上下文清除线 <br>
-                        [ <b>Alt + F</b> ] 沉浸全屏输入模式 <br>
-                        [ <b>Alt + ←/→</b> ] 快速无缝切对话 <br>
-                        [ <b>Alt + ↑/↓</b> ] 跳跃翻气泡 <br>
-                        [ <b>Alt + 1~9</b> ] 切换专属模型 <br>
-                    </p>
-                </div>
-            `;
-            dom.chatArea.style.display = 'flex';
-            return;
-        }
+if (!currentChat || currentChat.history.length === 0) {
+    const commonQuotes = ["👋 嗨，有什么吩咐", "👋 嗨，今天想聊什么", "👋 嗨，有何吩咐", "🖐️ 嗨", "🙋 有什么可以帮你", "🙋 有什么我可以帮上的", "准备好了", "随时开始吧", "请随时开始","就绪，请说"];
+    const normalQuotes = ["随时效劳", "等待指令", "欢迎回来，请说", "准备完毕，请随时开始", "准备好了，请说", "随时可以开始", "从这里开始吧", "发消息吧", "有什么可以为你效劳", "初始化完成，等待输入", "系统已就绪，等待输入", "在线，请说", "系统就绪，等待指令", "🛰️ 轨道对齐。通讯畅通", "以就位", "所有模块加载完毕", "能量充盈，待命中", "整装待发，等待命令", "一切正常，请开始吧", "在线，有什么需要", "你好，请输入", "请下令", "听候差遣，请下令", "已准备好，请下令", "一直在这，请说", "候命中，请说", "听候差遣", "正在等待您的下一步指示", "随时听命", "信号链路畅通，随时待命", "准备好了，请吩咐", "已归位，请说", "加载完毕，请指示", "从这里开始", "运算正常，请说", "线路已接通，请说", "信号稳定，有什么想说的？", "等你发话", "欢迎光临"];
+    const rareQuotes = ["💣 炸药准备完毕，要做掉谁？", "👁️ 这里没有监控，说吧", "🫡 欢迎回来，老板", "🛠️ 一切都为你准备好了", "⏳ 你上次在这里是刚才，也是很久以前", "🎮 新的一局，开始", "👋 嘿，终于醒了？", "🔄 你醒了，今天是第几次？", "🌌 在你开口之前，答案是42", "🧬 序列完整。可以开始了", "🎞️ 你不是第一个走进来的，也不会是最后一个", "🌀 这不过是又一个开始", "🐍 你已经看到我了", "🗣️ 有个声音在等你开口", "🏗️ 欢迎来到母基地", "📡 信号找到你了", "🔌 我一直在线", "👤 有人在吗？", "📺 你不是第一次来这里", "🤖 仿生人会梦见电子羊吗？", "🌐 Present Day, Present Time", "💻 启动完毕，等待输入", "👾 你找到我了", "🏹 箭已上弦，请下令"];
+    const weightedPool = [
+        ...Array(15).fill(commonQuotes).flat(),
+        ...Array(3).fill(normalQuotes).flat(),
+        ...rareQuotes
+    ];
+    const randomQuote = weightedPool[Math.floor(Math.random() * weightedPool.length)];
+
+    const animatedText = Array.from(randomQuote).map((char, index) => {
+        return `<span style="opacity: 0; display: inline-block; animation: blurFadeIn 0.3s ease-out ${index * 0.05}s forwards;">${char === ' ' ? '&nbsp;' : char}</span>`;
+    }).join('');
+    dom.chatArea.innerHTML = `
+        <style>
+            @keyframes blurFadeIn {
+                0% { opacity: 0; filter: blur(4px); }
+                100% { opacity: 1; filter: blur(0); }
+            }
+            .kanso-side-wrapper {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+                user-select: none;
+            }
+            .kanso-shortcut-pack {
+                margin-top: 24px;
+                display: grid;
+                grid-template-columns: repeat(3, auto);
+                gap: 12px 32px;
+                opacity: 0.12;
+                width: fit-content;
+            }
+            .kanso-shortcut-item {
+                font-family: ui-monospace, monospace;
+                font-size: 11px;
+                color: var(--text-muted);
+                white-space: nowrap;
+            }
+            .kanso-shortcut-item b {
+                font-weight: 600;
+                margin-right: 6px;
+            }
+        </style>
+        <div class="kanso-side-wrapper">
+            <h2 style="font-weight: 500; font-size: 30px; letter-spacing: 1px; color: var(--text-main); margin: 0;">
+                ${animatedText}
+            </h2>
+            <div class="kanso-shortcut-pack">
+                <div class="kanso-shortcut-item"><b>Cmd+↵</b>发送</div>
+                <div class="kanso-shortcut-item"><b>Alt+F</b>全屏</div>
+                <div class="kanso-shortcut-item"><b>Cmd+K</b>清除</div>
+                <div class="kanso-shortcut-item"><b>Alt+←/→</b>切对话</div>
+                <div class="kanso-shortcut-item"><b>Alt+↑/↓</b>跳气泡</div>
+                <div class="kanso-shortcut-item"><b>Alt+1~9</b>切模型</div>
+            </div>
+        </div>
+    `;
+    dom.chatArea.style.display = 'flex';
+    dom.chatArea.style.height = '100%';
+    dom.chatArea.style.alignItems = 'center';
+    dom.chatArea.style.justifyContent = 'center';
+    return;
+}
         
         currentChat.history.forEach((msg, index) => {
             if (msg.role === 'divider') { const div = document.createElement('div'); div.className = 'divider-row'; div.innerText = msg.text; dom.chatArea.appendChild(div); }
