@@ -197,6 +197,13 @@
         .settings-tab:hover { background: var(--bg-sidebar-hover); color: var(--text-main); }
         .settings-tab.active { background: var(--bg-sidebar-active); color: var(--text-main); }
 
+        /* KansoChat branding in settings sidebar bottom */
+        .settings-sidebar-bottom { margin-top: auto; padding-top: 10px; display: flex; align-items: center; gap: 8px; padding-left: 4px; }
+        .kanso-label { font-size: 12px; font-weight: 600; color: var(--text-muted); letter-spacing: 0.03em; white-space: nowrap; }
+        .kanso-github-link { display: flex; align-items: center; color: var(--text-muted); transition: color 0.2s; }
+        .kanso-github-link:hover { color: var(--text-main); }
+        .kanso-github-link svg { display: block; }
+
         .settings-main { flex: 1; padding: 25px 30px; overflow-y: auto; }
         .settings-pane { display: none; flex-direction: column; gap: 22px; }
         .settings-pane.active { display: flex; }
@@ -340,6 +347,16 @@
             <button class="settings-tab" onclick="switchTab('tab-models')">模型</button>
             <button class="settings-tab" onclick="switchTab('tab-shortcuts')">快捷键</button>
             <button class="settings-tab" onclick="switchTab('tab-system')">系统</button>
+
+            <!-- KansoChat branding: name + GitHub icon, minimal, bottom-left -->
+            <div class="settings-sidebar-bottom">
+                <span class="kanso-label">KansoChat</span>
+                <a href="https://github.com/Shuikun0/KansoChat" target="_blank" class="kanso-github-link" title="GitHub">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 0C5.374 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0 1 12 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z"/>
+                    </svg>
+                </a>
+            </div>
         </div>
         
         <div class="settings-main">
@@ -410,7 +427,7 @@
                 </div>
 
                 <div class="setting-block" style="margin-top: 15px;">
-                    <label>预估 Token 消耗提示 (仅在“思考中”微弱显示)</label>
+                    <label>预估 Token 消耗提示 (仅在"思考中"微弱显示)</label>
                     <div class="segment-group" style="margin-bottom: 5px;">
                         <button class="segment-btn active" data-token-val="true" onclick="setTokenEstimate(true)">开启提示</button>
                         <button class="segment-btn" data-token-val="false" onclick="setTokenEstimate(false)">关闭</button>
@@ -453,8 +470,8 @@
                     <div class="shortcut-item"><span>快速新建空对话</span> <button class="shortcut-btn" id="sc-newChat" onclick="listenShortcut('newChat')"></button></div>
                     <div class="shortcut-item"><span>沉浸全屏输入框</span> <button class="shortcut-btn" id="sc-expandInput" onclick="listenShortcut('expandInput')"></button></div>
                     <div class="shortcut-item"><span>宽屏展开/收起边栏</span> <button class="shortcut-btn" id="sc-toggleSidebar" onclick="listenShortcut('toggleSidebar')"></button></div>
-                    <div class="shortcut-item"><span>向上/下无缝切对话</span> <div style="display:flex; gap:5px;"><button class="shortcut-btn" id="sc-switchPrev" onclick="listenShortcut('switchPrev')" style="min-width: 40px;"></button> <button class="shortcut-btn" id="sc-switchNext" onclick="listenShortcut('switchNext')" style="min-width: 40px;"></button></div></div>
-                    <div class="shortcut-item"><span>向左/右跳跃翻气泡</span> <div style="display:flex; gap:5px;"><button class="shortcut-btn" id="sc-jumpUp" onclick="listenShortcut('jumpUp')" style="min-width: 40px;"></button> <button class="shortcut-btn" id="sc-jumpDown" onclick="listenShortcut('jumpDown')" style="min-width: 40px;"></button></div></div>
+                    <div class="shortcut-item"><span>向左/右无缝切对话</span> <div style="display:flex; gap:5px;"><button class="shortcut-btn" id="sc-switchPrev" onclick="listenShortcut('switchPrev')" style="min-width: 40px;"></button> <button class="shortcut-btn" id="sc-switchNext" onclick="listenShortcut('switchNext')" style="min-width: 40px;"></button></div></div>
+                    <div class="shortcut-item"><span>向上/下跳跃翻气泡</span> <div style="display:flex; gap:5px;"><button class="shortcut-btn" id="sc-jumpUp" onclick="listenShortcut('jumpUp')" style="min-width: 40px;"></button> <button class="shortcut-btn" id="sc-jumpDown" onclick="listenShortcut('jumpDown')" style="min-width: 40px;"></button></div></div>
                 </div>
                 <button class="modal-btn" onclick="resetShortcuts()" style="margin-top: 5px;">🔄 恢复默认快捷键</button>
                 
@@ -506,12 +523,19 @@
 
     const historySteps = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 30, 999];
 
-    const defaultModels = ["gemini-3.1-pro-preview", "gemini-3-flash-preview", "gemini-3.1-flash-lite-preview", "gemini-2.5-pro", "gemini-2.5-flash"];
+    // CHANGE 1: Only 3 models, default to flashlite (last)
+    const defaultModels = ["gemini-3.1-pro-preview", "gemini-3-flash-preview", "gemini-3.1-flash-lite-preview"];
     let savedModels = JSON.parse(localStorage.getItem('gemini_custom_models')) || [...defaultModels];
-    let globalDefaultModel = localStorage.getItem('gemini_default_model') || savedModels[0];
-    let modelConfigs = JSON.parse(localStorage.getItem('gemini_model_configs')) || {}; 
+    let globalDefaultModel = localStorage.getItem('gemini_default_model') || "gemini-3.1-flash-lite-preview";
+    // CHANGE 2: Default all models to block output (false = not stream)
+    let modelConfigs = JSON.parse(localStorage.getItem('gemini_model_configs')) || { 
+        "gemini-3.1-pro-preview": false, 
+        "gemini-3-flash-preview": false, 
+        "gemini-3.1-flash-lite-preview": false 
+    };
 
-    const defaultShortcuts = { newChat: 'KeyN', expandInput: 'KeyF', toggleSidebar: 'KeyB', jumpUp: 'ArrowLeft', jumpDown: 'ArrowRight', switchPrev: 'ArrowUp', switchNext: 'ArrowDown' };
+    // CHANGE 3: Swap shortcut keys — switchPrev/Next use Left/Right, jumpUp/Down use Up/Down
+    const defaultShortcuts = { newChat: 'KeyN', expandInput: 'KeyF', toggleSidebar: 'KeyB', jumpUp: 'ArrowUp', jumpDown: 'ArrowDown', switchPrev: 'ArrowLeft', switchNext: 'ArrowRight' };
     let userShortcuts = JSON.parse(localStorage.getItem('gemini_shortcuts')) || {...defaultShortcuts};
     let isListeningShortcut = null;
 
@@ -770,7 +794,7 @@
         const list = document.getElementById('settings-model-list');
         list.innerHTML = '';
         savedModels.forEach((m, index) => {
-            const isStream = modelConfigs[m] !== false; 
+            const isStream = modelConfigs[m] === true; // CHANGE 2: default false (block), only stream if explicitly true
             const div = document.createElement('div');
             div.className = 'model-item drag-item'; div.draggable = true; div.dataset.val = m;
             div.innerHTML = `
@@ -784,7 +808,7 @@
         });
     }
     function toggleModelStream(m) {
-        modelConfigs[m] = (modelConfigs[m] === false) ? true : false;
+        modelConfigs[m] = (modelConfigs[m] === true) ? false : true; // CHANGE 2: toggle between true/false, default false
         localStorage.setItem('gemini_model_configs', JSON.stringify(modelConfigs));
         renderSettingsModels();
     }
@@ -936,6 +960,7 @@
 
             if (e.altKey && !e.ctrlKey && !e.metaKey) {
                 if (e.code === userShortcuts.newChat) { e.preventDefault(); createNewChat(); }
+                // CHANGE 3: jumpUp/Down now use ArrowUp/Down; switchPrev/Next use ArrowLeft/Right
                 if (e.code === userShortcuts.jumpUp) { e.preventDefault(); jumpToMessage('up'); }
                 if (e.code === userShortcuts.jumpDown) { e.preventDefault(); jumpToMessage('down'); }
                 if (e.code === userShortcuts.switchPrev) { e.preventDefault(); switchChatDirection(-1); }
@@ -1154,6 +1179,7 @@
                         [ <b>Cmd + K</b> ] 插入上下文清除线 <br>
                         [ <b>Alt + F</b> ] 沉浸全屏输入模式 <br>
                         [ <b>Alt + ←/→</b> ] 快速无缝切对话 <br>
+                        [ <b>Alt + ↑/↓</b> ] 跳跃翻气泡 <br>
                         [ <b>Alt + 1~9</b> ] 切换专属模型 <br>
                     </p>
                 </div>
@@ -1318,7 +1344,8 @@
         if (currentChatId === targetChat.id) updateInputUI();
         renderSidebar(); 
 
-        const isStream = modelConfigs[model] !== false; 
+        // CHANGE 2: isStream defaults to false (block output) unless explicitly set to true
+        const isStream = modelConfigs[model] === true; 
         const requestUrl = isStream
             ? `https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?alt=sse&key=${apiKey}`
             : `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
