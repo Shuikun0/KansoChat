@@ -1,15 +1,13 @@
 # 🍵 KansoChat
 
-一个**可连发问题无需等待**的纯前端 AI 对话面板。单文件，零依赖，没有后端数据库，没有复杂的构建配置。KansoChat 的目标是：提供一个流畅、顺手、但又克制的文字交互环境。
-
->🍃 注：本项目极度克制（我已经禁食145天！），目前仅适配并支持 Google Gemini API。**
+KansoChat 是一个**可连发问题无需等待**的纯前端 AI 对话面板。单文件，零依赖，没有后端数据库，没有复杂的构建配置。KansoChat 的目标是：提供一个流畅、顺手、但又克制的文字交互环境。
+>🍃 注：本项目极度克制（我已经禁食145天！），目前仅适配并支持 Google Gemini API。
 
 ![KansoChat Preview](./preview.png)
 
 <p align="center">
-  <br />
   <a href="https://shuikun0.github.io/KansoChat/">
-    <img src="https://img.shields.io/badge/ Launch Demo → 立刻试试看-0066FF?style=for-the-badge" height="60">
+    <img src="https://img.shields.io/badge/🚀%20Launch%20Web%20App%20→%20点这里立刻试试看-0066FF?style=for-the-badge" height="60">
   </a>
   <br />
 </p>
