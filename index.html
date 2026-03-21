@@ -413,6 +413,11 @@
             padding: 0 8px;
         }
 
+        #sysprompt-btn.has-prompt {
+            color: var(--msg-user);
+            opacity: 1;
+        }
+
         .search-btn.active {
             opacity: 1;
             color: var(--text-main);
@@ -1271,16 +1276,16 @@
         .att-chip:hover { background: rgba(128,128,128,0.2); }
         .att-chip .att-preview {
             display: none; position: absolute; bottom: calc(100% + 6px); left: 0;
-            background: var(--bg-main); border: 1px solid var(--border-color);
-            border-radius: 8px; padding: 4px; z-index: 100; pointer-events: none;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+            background: var(--bg-main); border: 0.5px solid var(--border-color);
+            border-radius: 10px; padding: 5px; z-index: 100; pointer-events: none;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.12);
         }
         .att-chip:hover .att-preview { display: block; }
-        .att-chip .att-preview img { display: block; max-width: 160px; max-height: 120px; border-radius: 5px; }
-        .att-pending { display: flex; gap: 6px; flex-wrap: wrap; }
-        #pending-imgs-bar { position: absolute; bottom: calc(100% + 6px); left: 0; right: 0; display: flex; gap: 6px; flex-wrap: wrap; padding: 0; }
-        .att-chip .att-del { opacity: 0.35; margin-left: 1px; font-size: 10px; line-height: 1; }
-        .att-chip .att-del:hover { opacity: 0.8; }
+        .att-chip .att-preview img { display: block; max-width: 180px; max-height: 130px; border-radius: 6px; }
+        .att-pending { display: flex; gap: 5px; flex-wrap: wrap; }
+        #pending-imgs-bar { position: absolute; bottom: calc(100% + 6px); left: 0; right: 0; display: flex; gap: 5px; flex-wrap: wrap; padding: 0; }
+        .att-chip .att-del { opacity: 0.3; margin-left: 2px; font-size: 10px; line-height: 1; }
+        .att-chip .att-del:hover { opacity: 0.7; }
         .no-key-prompt {
             display: flex;
             flex-direction: column;
@@ -1404,6 +1409,24 @@
                         </div>
                     </div>
 
+                    <div id="sysprompt-popup-container" style="position:relative;display:flex;align-items:center;">
+                        <button id="sysprompt-btn" class="icon-btn" onclick="toggleSysPromptPopup(event)" title="系统提示词">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                            </svg>
+                        </button>
+                        <div id="sysprompt-popup" style="display:none;position:absolute;top:calc(100% + 8px);right:0;width:360px;background:var(--bg-main);border:1px solid var(--border-color);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.12);z-index:200;overflow:hidden;" onclick="event.stopPropagation()">
+                            <div style="padding:14px 16px 10px;border-bottom:1px solid var(--border-color);display:flex;justify-content:space-between;align-items:center;">
+                                <span style="font-size:13px;font-weight:500;color:var(--text-main);">系统提示词</span>
+                                <div style="display:flex;gap:6px;align-items:center;">
+                                    <span id="sysprompt-scope-label" style="font-size:11px;color:var(--text-muted);"></span>
+                                    <button onclick="clearSysPrompt()" style="background:none;border:none;font-size:11px;color:var(--text-muted);cursor:pointer;padding:2px 6px;border-radius:4px;" onmouseenter="this.style.color='var(--text-main)'" onmouseleave="this.style.color='var(--text-muted)'">清空</button>
+                                </div>
+                            </div>
+                            <textarea id="sysprompt-input" placeholder="输入系统提示词，对所有对话生效&#10;&#10;在特定对话中修改仅影响该对话..." style="width:100%;height:160px;border:none;background:transparent;color:var(--text-main);font-size:13px;line-height:1.6;padding:14px 16px;resize:none;outline:none;font-family:inherit;" oninput="saveSysPrompt(this.value)"></textarea>
+                        </div>
+                    </div>
+
                     <button id="search-toggle-btn" class="icon-btn search-btn active" title="联网搜索：开启后 AI 可实时获取最新资讯"
                         onclick="toggleSearch()">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -1442,6 +1465,7 @@
                 <button class="settings-tab" onclick="switchTab('tab-functions')">功能</button>
                 <button class="settings-tab" onclick="switchTab('tab-models')">模型</button>
                 <button class="settings-tab" onclick="switchTab('tab-shortcuts')">快捷键</button>
+                <button class="settings-tab" onclick="switchTab('tab-prompt')">提示词</button>
                 <button class="settings-tab" onclick="switchTab('tab-system')">系统</button>
 
                 <div class="settings-sidebar-bottom">
@@ -1616,6 +1640,30 @@
                     </div>
                 </div>
 
+                <div id="tab-prompt" class="settings-pane">
+                    <h3>系统提示词</h3>
+                    <div class="setting-block">
+                        <label style="display:flex;flex-direction:column;gap:4px;">
+                            全局系统提示词
+                            <span style="font-size:12px;color:var(--text-muted);font-weight:normal;line-height:1.5;">
+                                每次对话开始时自动注入，用于设定 AI 的角色、行为和回复风格。留空则不注入。
+                            </span>
+                        </label>
+                        <textarea id="system-prompt-input"
+                            placeholder="例：你是一个简洁的助手，回复时尽量简短，不使用 Markdown 格式。"
+                            style="width:100%;height:160px;padding:10px;border:1px solid var(--border-color);border-radius:8px;background:var(--input-bg);color:var(--text-main);font-size:13px;font-family:inherit;resize:vertical;outline:none;line-height:1.6;transition:border-color .2s;"
+                            oninput="saveSystemPrompt()"
+                            onfocus="this.style.borderColor='var(--msg-user)'"
+                            onblur="this.style.borderColor='var(--border-color)'"></textarea>
+                    </div>
+                    <div class="setting-block" style="margin-top:4px;">
+                        <label style="display:flex;justify-content:space-between;align-items:center;">
+                            <span>每个对话独立提示词</span>
+                            <span style="font-size:12px;color:var(--text-muted);font-weight:normal;">（暂未支持，规划中）</span>
+                        </label>
+                    </div>
+                </div>
+
                 <div id="tab-system" class="settings-pane">
                     <h3>系统与数据</h3>
                     <div class="setting-block">
@@ -1660,6 +1708,7 @@
         let sessionScrollPositions = {};
 
         let isSearchEnabled = true;
+        let globalSystemPrompt = localStorage.getItem('gemini_system_prompt') || '';
         let currentTheme = 'auto', currentFont = '15px', currentAccent = '#10a37f';
         let codeDefaultCollapse = localStorage.getItem('gemini_code_collapse') !== 'false';
 
@@ -1667,6 +1716,7 @@
         let queueMax = parseInt(localStorage.getItem('gemini_queue_max') || '5');
 
         let historyLimit = localStorage.getItem('gemini_history_limit') ? parseInt(localStorage.getItem('gemini_history_limit')) : 999;
+        let systemPrompt = localStorage.getItem('gemini_system_prompt') || '';
         let showTokenEstimate = localStorage.getItem('gemini_show_token_est') !== 'false';
 
         const historySteps = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 30, 999];
@@ -1828,6 +1878,7 @@
             }
             setupEventListeners();
             updateInputUI();
+            updateSysPromptBtn();
 
             initSortable('chat-list', 'chat');
             initSortable('settings-model-list', 'model');
@@ -2172,6 +2223,8 @@
             dom.fontSlider.value = parseInt(currentFont.replace('px', '')); dom.fontDisplay.innerText = currentFont;
             document.querySelectorAll('.color-dot').forEach(d => { d.classList.toggle('active', d.dataset.color === currentAccent); });
             applyPreferences(currentTheme, currentFont, currentAccent);
+            const spInput = document.getElementById('system-prompt-input');
+            if (spInput) spInput.value = systemPrompt;
         }
         function applyPreferences(theme, fontSize, accent) {
             document.documentElement.setAttribute('data-theme', theme);
@@ -2182,6 +2235,11 @@
             currentTheme = t; document.querySelectorAll('.segment-btn[data-theme-val]').forEach(b => b.classList.remove('active'));
             document.querySelector(`.segment-btn[data-theme-val="${t}"]`)?.classList.add('active'); localStorage.setItem('gemini_theme', t); applyPreferences(currentTheme, currentFont, currentAccent);
         }
+        function saveSystemPrompt() {
+            systemPrompt = document.getElementById('system-prompt-input').value;
+            localStorage.setItem('gemini_system_prompt', systemPrompt);
+        }
+
         function setAccentColor(c) {
             currentAccent = c; document.querySelectorAll('.color-dot').forEach(d => d.classList.toggle('active', d.dataset.color === c));
             localStorage.setItem('gemini_accent', c); applyPreferences(currentTheme, currentFont, currentAccent);
@@ -2259,6 +2317,10 @@
 
             document.addEventListener('click', (e) => {
                 dom.contextMenu.style.display = 'none';
+                if (!e.target.closest('#sysprompt-popup-container')) {
+                    const sp = document.getElementById('sysprompt-popup');
+                    if (sp) sp.style.display = 'none';
+                }
                 if (!e.target.closest('#history-popup-container')) {
                     dom.historyPopup.classList.remove('active');
                 }
@@ -2308,6 +2370,51 @@
         }
 
         function toggleSidebar() { dom.sidebar.classList.toggle('collapsed'); }
+        function toggleSysPromptPopup(e) {
+            if (e) e.stopPropagation();
+            const popup = document.getElementById('sysprompt-popup');
+            const isOpen = popup.style.display === 'block';
+            if (isOpen) { popup.style.display = 'none'; return; }
+            // 优先用当前对话的 prompt，没有则用全局
+            const chat = chats.find(c => c.id == currentChatId);
+            const chatPrompt = chat && chat.systemPrompt != null ? chat.systemPrompt : null;
+            const activePrompt = chatPrompt !== null ? chatPrompt : globalSystemPrompt;
+            const ta = document.getElementById('sysprompt-input');
+            ta.value = activePrompt;
+            const scopeLabel = document.getElementById('sysprompt-scope-label');
+            scopeLabel.innerText = chatPrompt !== null && chatPrompt !== globalSystemPrompt ? '（当前对话）' : '（全局）';
+            popup.style.display = 'block';
+            ta.focus();
+        }
+
+        function saveSysPrompt(val) {
+            const chat = chats.find(c => c.id == currentChatId);
+            if (chat) {
+                chat.systemPrompt = val;
+                saveData();
+            }
+            // 如果没有当前对话，存全局
+            if (!chat) {
+                globalSystemPrompt = val;
+                localStorage.setItem('gemini_system_prompt', val);
+            }
+            updateSysPromptBtn();
+        }
+
+        function clearSysPrompt() {
+            const ta = document.getElementById('sysprompt-input');
+            ta.value = '';
+            saveSysPrompt('');
+        }
+
+        function updateSysPromptBtn() {
+            const btn = document.getElementById('sysprompt-btn');
+            if (!btn) return;
+            const chat = chats.find(c => c.id == currentChatId);
+            const active = (chat && chat.systemPrompt) || globalSystemPrompt;
+            btn.classList.toggle('has-prompt', !!active);
+        }
+
         function toggleSearch() { isSearchEnabled = !isSearchEnabled; localStorage.setItem('gemini_search', isSearchEnabled); updateSearchBtnUI(); }
         function updateSearchBtnUI() { dom.searchBtn.classList.toggle('active', isSearchEnabled); dom.searchBtn.title = isSearchEnabled ? '联网搜索已开启：AI 可实时获取最新资讯' : '联网搜索已关闭'; }
         function openSettings() { isListeningShortcut = null; renderShortcutsUI(); document.getElementById('settings-modal').style.display = 'flex'; }
@@ -2365,6 +2472,7 @@
             if (currentChatId) sessionScrollPositions[currentChatId] = dom.chatArea.scrollTop;
             currentChatId = id;
             collapseInput(); unreadCompletedChats.delete(id);
+            setTimeout(updateSysPromptBtn, 0);
             saveData(); syncSelectUIs(); renderSidebar(); renderChatArea(); updateInputUI();
 
             if (sessionScrollPositions[id] !== undefined) {
@@ -2680,7 +2788,7 @@
                 const chip = document.createElement('span');
                 chip.className = 'att-chip';
                 chip.innerHTML =
-                    '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;opacity:0.6"><rect x="3" y="3" width="18" height="14" rx="2"/><path d="M3 17l4-4 4 4 4-5 4 5"/></svg>' +
+                    '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;opacity:0.45"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>' +
                     '<span>' + img.name + '</span>' +
                     '<div class="att-preview"><img src="data:' + img.mime + ';base64,' + img.b64 + '"></div>' +
                     '<span class="att-del" onclick="event.stopPropagation();pendingImgs.splice(' + i + ',1);renderPendingImgs()">✕</span>';
@@ -2712,18 +2820,18 @@
         }
 
         function makeAttThumb(img) {
-            const src = 'data:' + img.mime + ';base64,' + img.b64;
+            const dataSrc = 'data:' + img.mime + ';base64,' + img.b64;
             const el = document.createElement('img');
-            el.src = src;
+            el.src = dataSrc;
             el.style.cssText = 'width:48px;height:48px;object-fit:cover;border-radius:6px;cursor:zoom-in;display:block;opacity:0.9;transition:opacity .15s;';
             el.title = img.name;
             el.onmouseenter = () => el.style.opacity = '1';
             el.onmouseleave = () => el.style.opacity = '0.9';
-            el.addEventListener('click', () => openLightbox(src));
+            el.addEventListener('click', () => openLightbox(dataSrc));
             el.addEventListener('contextmenu', (e) => {
                 e.preventDefault(); e.stopPropagation();
                 showContextMenu(e.clientX, e.clientY, [
-                    { label: '📋 复制图片', action: () => fetch(src).then(r => r.blob()).then(blob => navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })])) }
+                    { label: '📋 复制图片', action: () => fetch(dataSrc).then(r => r.blob()).then(blob => navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })])) }
                 ]);
             });
             return el;
@@ -2734,7 +2842,7 @@
             const chip = document.createElement('span');
             chip.className = 'att-chip';
             chip.innerHTML =
-                '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;opacity:0.6"><rect x="3" y="3" width="18" height="14" rx="2"/><path d="M3 17l4-4 4 4 4-5 4 5"/></svg>' +
+                '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;opacity:0.45"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>' +
                 '<span>' + img.name + '</span>' +
                 '<div class="att-preview"><img src="' + src + '"></div>';
             chip.addEventListener('click', () => openLightbox(src));
@@ -2869,8 +2977,18 @@
             delete sessionScrollPositions[targetChat.id];
             saveData(); if (currentChatId === targetChat.id) renderChatArea();
 
+            // 注入系统提示词（Gemini 用 user/model 对模拟 system prompt）
+            let apiContentsBase = validContext;
+            if (systemPrompt && systemPrompt.trim()) {
+                apiContentsBase = [
+                    { role: 'user', parts: [{ text: systemPrompt.trim() }] },
+                    { role: 'model', parts: [{ text: '好的，我明白了。' }] },
+                    ...validContext
+                ];
+            }
+
             // 临时把图片 inlineData 拼进 API 请求（不写回 history，且剥掉 _imgs 字段）
-            const apiContents = validContext.map(m => {
+            const apiContents = apiContentsBase.map(m => {
                 if (m.role === 'user' && m._imgs && m._imgs.length) {
                     const apiParts = m._imgs.map(img => ({ inlineData: { mimeType: img.mime, data: img.b64 } }));
                     apiParts.push(...m.parts);
@@ -2878,7 +2996,12 @@
                 }
                 return { role: m.role, parts: m.parts };
             });
+            const chat = chats.find(c => c.id == targetChat.id);
+            const sysPrompt = (chat && chat.systemPrompt != null && chat.systemPrompt !== '')
+                ? chat.systemPrompt
+                : globalSystemPrompt;
             const requestBody = { contents: apiContents };
+            if (sysPrompt) requestBody.systemInstruction = { parts: [{ text: sysPrompt }] };
             if (isSearchEnabled) requestBody.tools = [{ googleSearch: {} }];
 
             abortControllers[targetChat.id] = new AbortController();
