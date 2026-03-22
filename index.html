@@ -595,8 +595,8 @@
                             <!-- 编辑区（在上）-->
                             <div class="sp-edit-area">
                                 <textarea id="sysprompt-input"
-                                    placeholder="输入系统提示词...&#10;&#10;在特定对话中修改仅影响该对话"
-                                    oninput="onSysPromptInput(this.value); autoResizeSysPromptTA(this)"></textarea>
+                                    placeholder="输入系统提示词..."
+                                    oninput="onSysPromptInput(this.value)"></textarea>
                                 <div class="sp-edit-footer">
                                     <button class="sp-save-btn" id="sp-save-btn" onclick="saveCurrentAsPreset()" title="收藏当前提示词">
                                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
@@ -713,7 +713,7 @@
     </div>
 
     <div id="settings-modal">
-        <div class="modal-content" onclick="event.stopPropagation()">
+        <div class="modal-content" onclick="dom.contextMenu.style.display='none'; event.stopPropagation()">
             <div class="settings-sidebar">
                 <button class="settings-tab active" onclick="switchTab('tab-display')">显示</button>
                 <button class="settings-tab" onclick="switchTab('tab-functions')">功能</button>
@@ -1062,8 +1062,9 @@
                 applyBtn.className = 'sp-preset-apply';
                 applyBtn.textContent = preset.name;
                 applyBtn.onclick = () => {
-                    if (ta) { ta.value = preset.content; originalVal = preset.content; autoResizeSysPromptTA(ta); }
+                    if (ta) { ta.value = preset.content; originalVal = preset.content; }
                     onSysPromptInput(preset.content);
+                    document.getElementById('sysprompt-popup').style.display = 'none';
                 };
 
                 // hover 预览：暂时把 textarea 内容替换为该预设
@@ -2137,9 +2138,6 @@
             const activePrompt = chatPrompt !== null ? chatPrompt : globalSystemPrompt;
             const ta = document.getElementById('sysprompt-input');
             ta.value = activePrompt;
-            // 同步 textarea 高度
-            ta.style.height = 'auto';
-            ta.style.height = Math.min(ta.scrollHeight, 200) + 'px';
 
             // 清空按钮显隐
             const clearBtn = document.getElementById('sp-clear-btn');
@@ -2166,6 +2164,7 @@
             const ta = document.getElementById('sysprompt-input');
             ta.value = '';
             onSysPromptInput('');
+            document.getElementById('sysprompt-popup').style.display = 'none';
         }
 
         function updateSysPromptBtn() {
