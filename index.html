@@ -372,57 +372,36 @@
         /* ── 系统提示词 popup（重构版）── */
         #sysprompt-popup {
             display: none; position: absolute; top: calc(100% + 8px); right: 0;
-            width: 380px; background: var(--bg-main); border: 1px solid var(--border-color);
+            width: 340px; background: var(--bg-main); border: 1px solid var(--border-color);
             border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.12); z-index: 200; overflow: hidden;
         }
-        .sp-header {
-            padding: 12px 14px 10px; border-bottom: 1px solid var(--border-color);
-            display: flex; justify-content: space-between; align-items: center;
-        }
-        .sp-header-title { font-size: 13px; font-weight: 500; color: var(--text-main); }
-        .sp-header-actions { display: flex; gap: 6px; align-items: center; }
-        .sp-scope-label { font-size: 11px; color: var(--text-muted); }
+        .sp-popup-inner { padding: 18px; display: flex; flex-direction: column; gap: 14px; }
+        .sp-popup-header { display: flex; justify-content: space-between; align-items: center; font-size: 14px; color: var(--text-muted); font-weight: 500; }
+        .sp-popup-title { color: var(--text-muted); font-size: 14px; font-weight: 500; }
+        .sp-input-box { position: relative; border: 1px solid var(--border-color); border-radius: 8px; }
         .sp-clear-btn { background: none; border: none; font-size: 11px; color: var(--text-muted); cursor: pointer; padding: 2px 6px; border-radius: 4px; }
         .sp-clear-btn:hover { color: var(--text-main); background: var(--bg-sidebar-hover); }
 
         /* 预设列表区 */
-        .sp-presets-section { border-top: 1px solid var(--border-color); }
-        .sp-presets-header {
-            padding: 6px 14px; display: flex; justify-content: space-between; align-items: center;
-            user-select: none;
+        .sp-presets-section { border-top: 1px solid var(--border-color); padding: 8px 14px 14px; }
+        .sp-presets-title { font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; display: block; }
+        .sp-presets-grid { display: flex; flex-wrap: wrap; gap: 6px; }
+        .sp-preset-pill {
+            display: flex; align-items: center; gap: 5px;
+            padding: 4px 10px; border: 1px solid var(--border-color); border-radius: 20px;
+            background: var(--bg-main); cursor: pointer; transition: background 0.12s, border-color 0.12s;
         }
-        .sp-presets-title { font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; }
-        .sp-presets-toggle { font-size: 10px; color: var(--text-muted); transition: transform 0.2s; cursor: pointer; }
-        .sp-presets-toggle.open { transform: rotate(180deg); }
-        .sp-presets-list { overflow: hidden; max-height: 0; transition: max-height 0.25s ease; }
-        .sp-presets-list.open { max-height: 210px; overflow-y: auto; }
-        .sp-preset-item {
-            display: flex; align-items: center; padding: 0 14px;
-            border-bottom: 1px solid var(--border-color); transition: background 0.12s; cursor: pointer;
-        }
-        .sp-preset-item:last-child { border-bottom: none; }
-        .sp-preset-item:hover { background: var(--bg-sidebar-hover); }
-        /* 默认标记点（不用星星，用左侧色块）*/
-        .sp-preset-default-dot {
-            width: 4px; height: 24px; border-radius: 2px; flex-shrink: 0; margin-right: 8px;
-            background: var(--msg-user); opacity: 0; transition: opacity 0.15s;
-        }
-        .sp-preset-item.is-default .sp-preset-default-dot { opacity: 1; }
-        .sp-preset-apply {
-            flex: 1; text-align: left; background: none; border: none; cursor: pointer;
-            font-size: 13px; color: var(--text-main); padding: 9px 0; white-space: nowrap;
-            overflow: hidden; text-overflow: ellipsis;
-        }
-        .sp-presets-empty {
-            padding: 10px 14px; font-size: 12px; color: var(--text-muted); font-style: italic;
-        }
+        .sp-preset-pill:hover { background: var(--bg-sidebar-hover); border-color: var(--text-muted); }
+        .sp-preset-pill-emoji { font-size: 14px; line-height: 1; }
+        .sp-preset-pill-name { font-size: 12px; color: var(--text-main); white-space: nowrap; }
+        .sp-presets-empty { font-size: 12px; color: var(--text-muted); font-style: italic; }
 
         /* 编辑区 */
         .sp-edit-area { position: relative; }
         #sysprompt-input {
-            width: 100%; height: 130px; border: none; background: transparent;
+            width: 100%; height: 120px; border: none; background: transparent;
             color: var(--text-main); font-size: 13px; line-height: 1.6;
-            padding: 10px 38px 10px 14px; resize: none; outline: none; font-family: inherit;
+            padding: 10px 12px 28px 12px; resize: none; outline: none; font-family: inherit;
             overflow-y: auto;
         }
         .sp-edit-footer {
@@ -453,7 +432,7 @@
         #preset-name-dialog.active { display: flex; }
         .preset-name-box {
             background: var(--bg-main); border: 1px solid var(--border-color);
-            border-radius: 12px; padding: 24px; width: 320px;
+            border-radius: 12px; padding: 24px; width: 360px;
             box-shadow: 0 12px 32px rgba(0,0,0,0.18);
             display: flex; flex-direction: column; gap: 14px;
         }
@@ -528,7 +507,27 @@
         .sp-edit-save-btn:hover { opacity: 0.85; }
         .sp-edit-cancel-btn { background: var(--bg-sidebar); color: var(--text-muted); }
         .sp-edit-cancel-btn:hover { background: var(--bg-sidebar-hover); color: var(--text-main); }
+        .preset-emoji-btn { width: 100%; aspect-ratio:1; border-radius: 8px; border: 1.5px solid var(--border-color); background: var(--input-bg); font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: border-color 0.15s, background 0.15s; padding: 0; }
+        .preset-emoji-btn:hover { background: var(--bg-sidebar-hover); }
+        .preset-emoji-btn.selected { border-color: var(--msg-user); background: var(--bg-sidebar-active); }
         .settings-presets-empty { padding: 20px; text-align: center; font-size: 13px; color: var(--text-muted); font-style: italic; }
+        #sysprompt-btn { position: relative; }
+        #sysprompt-btn .sp-tooltip {
+            display: none; position: absolute; top: calc(100% + 8px); right: 0;
+            background: var(--bg-main); border: 1px solid var(--border-color); border-radius: 8px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.12); padding: 10px 14px; font-size: 12px;
+            color: var(--text-muted); white-space: pre-wrap; width: max-content; min-width: 120px; max-width: 320px; max-height: 120px;
+            overflow-y: auto; line-height: 1.6; z-index: 300; pointer-events: none; text-align: left;
+        }
+        #sysprompt-btn:not(.popup-open):hover .sp-tooltip { display: block; }
+        #search-toggle-btn { position: relative; }
+        #search-toggle-btn .sp-tooltip {
+            display: none; position: absolute; top: calc(100% + 8px); right: 0;
+            background: var(--bg-main); border: 1px solid var(--border-color); border-radius: 8px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.12); padding: 8px 12px; font-size: 12px;
+            color: var(--text-muted); white-space: nowrap; z-index: 300; pointer-events: none;
+        }
+        #search-toggle-btn:hover .sp-tooltip { display: block; }
     </style>
 </head>
 
@@ -577,42 +576,35 @@
                     <div id="sysprompt-popup-container" style="position:relative;display:flex;align-items:center;">
                         <button id="sysprompt-btn" class="icon-btn" onclick="toggleSysPromptPopup(event)" title="系统提示词">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                                <g transform="scale(-1,1) translate(-24,0)"><path d="M15 4V2"/><path d="M15 16v-2"/><path d="M8 9h2"/><path d="M20 9h2"/><path d="M17.8 11.8 19 13"/><path d="M15 9h.01"/><path d="M17.8 6.2 19 5"/><path d="m3 21 9-9"/><path d="M12.2 6.2 11 5"/></g>
                             </svg>
                         </button>
 
-                        <div id="sysprompt-popup" onclick="event.stopPropagation()">
-                            <!-- 标题栏 -->
-                            <div class="sp-header">
-                                <span class="sp-header-title">系统提示词</span>
-                                <div class="sp-header-actions">
-                                    <button class="sp-clear-btn" id="sp-clear-btn" onclick="clearSysPrompt()" title="清空提示词" style="display:none;">
+                        <div id="sysprompt-popup" onclick="dom.contextMenu.style.display='none'; event.stopPropagation()">
+                            <div class="sp-popup-inner">
+                                <!-- 标题行，对齐 history popup header -->
+                                <div class="sp-popup-header">
+                                    <span class="sp-popup-title">系统提示词</span>
+                                    <button class="sp-clear-btn" id="sp-clear-btn" onclick="clearSysPrompt()" title="清空提示词" style="visibility:hidden;">
                                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
                                     </button>
                                 </div>
-                            </div>
 
-                            <!-- 编辑区（在上）-->
-                            <div class="sp-edit-area">
-                                <textarea id="sysprompt-input"
-                                    placeholder="输入系统提示词..."
-                                    oninput="onSysPromptInput(this.value)"></textarea>
-                                <div class="sp-edit-footer">
-                                    <button class="sp-save-btn" id="sp-save-btn" onclick="saveCurrentAsPreset()" title="收藏当前提示词">
+                                <!-- 提示词输入容器 -->
+                                <div class="sp-input-box" style="position:relative;">
+                                    <textarea id="sysprompt-input"
+                                        placeholder="输入系统提示词..."
+                                        oninput="onSysPromptInput(this.value)"></textarea>
+                                    <button class="sp-save-btn" id="sp-save-btn" onclick="saveCurrentAsPreset()" title="收藏当前提示词" style="position:absolute;bottom:6px;right:6px;">
                                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
                                     </button>
                                 </div>
                             </div>
 
-                            <!-- 收藏预设列表（在下，超过5条才折叠）-->
-                            <div class="sp-presets-section" id="sp-presets-section">
-                                <div class="sp-presets-header" id="sp-presets-header">
-                                    <span class="sp-presets-title">已收藏</span>
-                                    <span class="sp-presets-toggle" id="sp-presets-toggle" style="display:none;">▼</span>
-                                </div>
-                                <div class="sp-presets-list open" id="sp-presets-list">
-                                    <!-- 动态渲染 -->
-                                </div>
+                            <!-- 收藏预设列表 -->
+                            <div class="sp-presets-section" id="sp-presets-section" style="display:none;">
+                                <span class="sp-presets-title">已收藏</span>
+                                <div class="sp-presets-grid" id="sp-presets-list"></div>
                             </div>
                         </div>
                     </div>
@@ -642,12 +634,13 @@
                         </div>
                     </div>
 
-                    <button id="search-toggle-btn" class="icon-btn search-btn active" title="联网搜索：开启后 AI 可实时获取最新资讯" onclick="toggleSearch()">
+                    <button id="search-toggle-btn" class="icon-btn search-btn active" onclick="toggleSearch()">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <circle cx="12" cy="12" r="10"></circle>
                             <line x1="2" y1="12" x2="22" y2="12"></line>
                             <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
                         </svg>
+                        <div class="search-tooltip sp-tooltip"></div>
                     </button>
                 </div>
             </div>
@@ -701,10 +694,15 @@
     </div>
 
     <!-- 预设命名对话框 -->
-    <div id="preset-name-dialog" onclick="closePresetNameDialog()">
+    <div id="preset-name-dialog">
         <div class="preset-name-box" onclick="event.stopPropagation()">
             <h4>收藏提示词</h4>
             <input type="text" id="preset-name-input" placeholder="给这条提示词起个名字..." maxlength="30" />
+            <div style="display:flex;flex-direction:column;gap:8px;">
+                <div style="font-size:12px;font-weight:600;color:var(--text-main);">选择图标 <span id="preset-emoji-required" style="color:#ef4444;display:none;">*必选</span></div>
+                <div id="preset-emoji-grid" style="display:grid;grid-template-columns:repeat(8,1fr);gap:5px;"></div>
+            </div>
+            <input type="hidden" id="preset-emoji-input" value="" />
             <div class="preset-name-actions">
                 <button class="preset-name-cancel" onclick="closePresetNameDialog()">取消</button>
                 <button class="preset-name-confirm" onclick="confirmSavePreset()">收藏</button>
@@ -718,8 +716,8 @@
                 <button class="settings-tab active" onclick="switchTab('tab-display')">显示</button>
                 <button class="settings-tab" onclick="switchTab('tab-functions')">功能</button>
                 <button class="settings-tab" onclick="switchTab('tab-models')">模型</button>
-                <button class="settings-tab" onclick="switchTab('tab-shortcuts')">快捷键</button>
                 <button class="settings-tab" onclick="switchTab('tab-prompt')">提示词</button>
+                <button class="settings-tab" onclick="switchTab('tab-shortcuts')">快捷键</button>
                 <button class="settings-tab" onclick="switchTab('tab-system')">系统</button>
                 <div class="settings-sidebar-bottom">
                     <span class="kanso-label">KansoChat</span>
@@ -866,21 +864,8 @@
                 <div id="tab-prompt" class="settings-pane">
                     <h3>提示词预设</h3>
 
-                    <!-- 全局默认：下拉选单 -->
-                    <div class="setting-block">
-                        <label style="display:flex;flex-direction:column;gap:4px;">
-                            全局默认提示词
-                            <span style="font-size:12px;color:var(--text-muted);font-weight:normal;line-height:1.5;">
-                                每次对话开始时自动注入。选择「空」则不注入。
-                            </span>
-                        </label>
-                        <select id="default-preset-select" style="width:100%;max-width:none;" onchange="onDefaultPresetSelectChange()">
-                            <!-- 动态渲染 -->
-                        </select>
-                    </div>
-
                     <!-- 预设列表 -->
-                    <div class="setting-block" style="margin-top:4px;">
+                    <div class="setting-block">
                         <label>已收藏的预设</label>
                         <div class="settings-preset-list" id="settings-preset-list">
                             <!-- 动态渲染 -->
@@ -948,9 +933,6 @@
 
         // ── 提示词预设 ──────────────────────────────────────────
         let promptPresets = JSON.parse(localStorage.getItem('gemini_prompt_presets')) || [];
-        let defaultPresetId = localStorage.getItem('gemini_default_preset_id') ? Number(localStorage.getItem('gemini_default_preset_id')) : null;
-        // 预设列表面板是否展开
-        let presetsOpen = false;
         // 待收藏的内容（命名对话框使用）
         let _pendingSaveContent = '';
 
@@ -958,59 +940,72 @@
             localStorage.setItem('gemini_prompt_presets', JSON.stringify(promptPresets));
         }
 
-        function saveDefaultPresetId(id) {
-            defaultPresetId = id;
-            if (id === null) {
-                localStorage.removeItem('gemini_default_preset_id');
-            } else {
-                localStorage.setItem('gemini_default_preset_id', id);
-            }
-            // 不立即修改 globalSystemPrompt；默认预设仅在新建对话时生效
-            renderSettingsPromptTab();
+        const _presetEmojiOptions = ['💡','🗝️','📚','🗺️','🔬','🛋️','💵','💎','☀️','🌙','⚡️','⭐','🌑','🌓','🌠','🌌','👽','🛸','👾','🤖','🛰️','🪐','🧬','🚀','🦄','👁️','👹','😈','💀','🧙‍♂️','🧌','🐲','😀','🤩','😂','🧐','😎','🤓','🤐','🤥','😊','😅','😇','🤯','🤫','😌','😶‍🌫️','🤪'];
+
+        function renderEmojiGrid(selectedEmoji) {
+            const grid = document.getElementById('preset-emoji-grid');
+            if (!grid) return;
+            grid.innerHTML = '';
+            _presetEmojiOptions.forEach(e => {
+                const btn = document.createElement('button');
+                btn.className = 'preset-emoji-btn' + (e === selectedEmoji ? ' selected' : '');
+                btn.textContent = e;
+                btn.type = 'button';
+                btn.onclick = () => {
+                    document.getElementById('preset-emoji-input').value = e;
+                    grid.querySelectorAll('.preset-emoji-btn').forEach(b => b.classList.remove('selected'));
+                    btn.classList.add('selected');
+                };
+                grid.appendChild(btn);
+            });
+        }
+
+        function closePresetNameDialog() {
+            document.getElementById('preset-name-dialog').classList.remove('active');
+            document.getElementById('preset-emoji-input').value = '';
+            _pendingSaveContent = '';
         }
 
         // 打开命名对话框
         function saveCurrentAsPreset() {
             const content = (document.getElementById('sysprompt-input').value || '').trim();
             if (!content) return;
+            if (promptPresets.some(p => p.content === content)) return;
             _pendingSaveContent = content;
             const dialog = document.getElementById('preset-name-dialog');
             const nameInput = document.getElementById('preset-name-input');
             nameInput.value = '';
+            document.getElementById('preset-emoji-input').value = '';
+            renderEmojiGrid('');
             dialog.classList.add('active');
             setTimeout(() => nameInput.focus(), 50);
         }
 
-        function closePresetNameDialog() {
-            document.getElementById('preset-name-dialog').classList.remove('active');
-            _pendingSaveContent = '';
-        }
-
         function confirmSavePreset() {
             const name = document.getElementById('preset-name-input').value.trim();
+            const emoji = document.getElementById('preset-emoji-input').value.trim();
             if (!name) { document.getElementById('preset-name-input').focus(); return; }
-            const newPreset = { id: Date.now(), name, content: _pendingSaveContent };
+            if (!emoji) {
+                const req = document.getElementById('preset-emoji-required');
+                if (req) { req.style.display = 'inline'; setTimeout(() => req.style.display = 'none', 1500); }
+                return;
+            }
+            const newPreset = { id: Date.now(), name, emoji, content: _pendingSaveContent };
             promptPresets.push(newPreset);
             savePresets();
             closePresetNameDialog();
             renderPopupPresets();
             renderSettingsPromptTab();
-            // 收藏按钮短暂反馈
-            const btn = document.getElementById('sp-save-btn');
-            if (btn) {
-                const orig = btn.innerHTML;
-                btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg> 已收藏';
-                btn.style.color = 'var(--msg-user)'; btn.style.borderColor = 'var(--msg-user)';
-                setTimeout(() => { btn.innerHTML = orig; btn.style.color = ''; btn.style.borderColor = ''; }, 1500);
-            }
+            const ta = document.getElementById('sysprompt-input');
+            if (ta) onSysPromptInput(ta.value);
         }
 
         function deletePreset(id) {
             promptPresets = promptPresets.filter(p => p.id !== id);
             savePresets();
-            if (defaultPresetId === id) saveDefaultPresetId(null);
             renderPopupPresets();
             renderSettingsPromptTab();
+            updateSysPromptBtn();
         }
 
         function applyPreset(preset) {
@@ -1022,27 +1017,9 @@
         // 渲染顶栏 popup 里的预设列表
         function renderPopupPresets() {
             const list = document.getElementById('sp-presets-list');
-            const toggle = document.getElementById('sp-presets-toggle');
-            const header = document.getElementById('sp-presets-header');
             const section = document.getElementById('sp-presets-section');
             if (!list) return;
 
-            // 超过5条才显示折叠开关
-            const needsFold = promptPresets.length > 5;
-            if (toggle) toggle.style.display = needsFold ? 'inline' : 'none';
-            if (header) header.style.cursor = needsFold ? 'pointer' : 'default';
-            if (header) {
-                header.onclick = needsFold ? togglePresetsPanel : null;
-            }
-            // 始终展开（折叠由用户手动触发）
-            if (!presetsOpen && needsFold) {
-                // keep as-is (already collapsed if user collapsed)
-            } else if (!needsFold) {
-                list.classList.add('open');
-                if (toggle) toggle.classList.remove('open');
-            }
-
-            // 无预设时隐藏整个区域
             if (!promptPresets.length) {
                 if (section) section.style.display = 'none';
                 return;
@@ -1051,68 +1028,51 @@
 
             list.innerHTML = '';
             const ta = document.getElementById('sysprompt-input');
-            // 记录当前 textarea 原始值，hover 时临时替换用
             let originalVal = ta ? ta.value : '';
 
             promptPresets.forEach(preset => {
-                const item = document.createElement('div');
-                item.className = 'sp-preset-item';
+                const pill = document.createElement('div');
+                pill.className = 'sp-preset-pill';
 
-                const applyBtn = document.createElement('button');
-                applyBtn.className = 'sp-preset-apply';
-                applyBtn.textContent = preset.name;
-                applyBtn.onclick = () => {
-                    if (ta) { ta.value = preset.content; originalVal = preset.content; }
+                const emojiSpan = document.createElement('span');
+                emojiSpan.className = 'sp-preset-pill-emoji';
+                emojiSpan.textContent = preset.emoji || '📝';
+
+                const nameSpan = document.createElement('span');
+                nameSpan.className = 'sp-preset-pill-name';
+                nameSpan.textContent = preset.name;
+
+                pill.appendChild(emojiSpan);
+                pill.appendChild(nameSpan);
+
+                pill.onclick = () => {
+                    if (ta) { ta.value = preset.content; originalVal = preset.content; ta.style.caretColor = ''; }
                     onSysPromptInput(preset.content);
                     document.getElementById('sysprompt-popup').style.display = 'none';
+                    document.getElementById('sysprompt-btn').classList.remove('popup-open');
                 };
 
-                // hover 预览：暂时把 textarea 内容替换为该预设
-                item.addEventListener('mouseenter', () => {
-                    if (ta) { originalVal = ta.value; ta.value = preset.content; }
+                pill.addEventListener('mouseenter', () => {
+                    if (ta) { originalVal = ta.value; ta.value = preset.content; ta.style.caretColor = 'transparent'; }
                 });
-                item.addEventListener('mouseleave', () => {
-                    if (ta) ta.value = originalVal;
+                pill.addEventListener('mouseleave', () => {
+                    if (ta) { ta.value = originalVal; ta.style.caretColor = ''; }
                 });
 
-                // 右键菜单：设为默认 / 取消默认 + 删除
-                item.addEventListener('contextmenu', (e) => {
+                pill.addEventListener('contextmenu', (e) => {
                     e.preventDefault(); e.stopPropagation();
-                    const isDefault = defaultPresetId === preset.id;
                     showContextMenu(e.clientX, e.clientY, [
-                        {
-                            label: isDefault ? '✅ 取消全局默认' : '⭐ 设为全局默认',
-                            action: () => { saveDefaultPresetId(isDefault ? null : preset.id); renderPopupPresets(); }
-                        },
-                        {
-                            label: '🗑️ 删除「' + preset.name + '」', danger: true,
-                            action: () => deletePreset(preset.id)
-                        }
+                        { label: '🗑️ 删除「' + preset.name + '」', danger: true, action: () => deletePreset(preset.id) },
+                        { label: '⚙️ 打开提示词设置', action: () => { switchTab('tab-prompt'); openSettings(); } }
                     ]);
                 });
 
-                item.appendChild(applyBtn);
-                list.appendChild(item);
+                list.appendChild(pill);
             });
         }
 
         // 渲染设置页 prompt tab
         function renderSettingsPromptTab() {
-            // 全局默认：下拉选单
-            const sel = document.getElementById('default-preset-select');
-            if (sel) {
-                sel.innerHTML = '';
-                const emptyOpt = document.createElement('option');
-                emptyOpt.value = ''; emptyOpt.textContent = '空（不注入系统提示词）';
-                sel.appendChild(emptyOpt);
-                promptPresets.forEach(p => {
-                    const opt = document.createElement('option');
-                    opt.value = p.id; opt.textContent = p.name;
-                    sel.appendChild(opt);
-                });
-                sel.value = defaultPresetId !== null ? String(defaultPresetId) : '';
-            }
-
             // 预设列表
             const settingsList = document.getElementById('settings-preset-list');
             if (!settingsList) return;
@@ -1123,7 +1083,6 @@
             settingsList.innerHTML = '';
 
             promptPresets.forEach(preset => {
-                const isDefault = preset.id === defaultPresetId;
                 const item = document.createElement('div');
                 item.className = 'settings-preset-item';
                 item.draggable = true;
@@ -1141,8 +1100,7 @@
                 info.style.cssText = 'flex:1;min-width:0;display:flex;flex-direction:column;gap:1px;cursor:pointer;overflow:hidden;';
                 const nameEl = document.createElement('div');
                 nameEl.className = 'settings-preset-name';
-                nameEl.textContent = preset.name + (isDefault ? ' （默认）' : '');
-                nameEl.style.color = isDefault ? 'var(--msg-user)' : '';
+                nameEl.textContent = (preset.emoji ? preset.emoji + ' ' : '') + preset.name;
                 const previewEl = document.createElement('div');
                 previewEl.className = 'settings-preset-preview';
                 previewEl.textContent = preset.content;
@@ -1180,6 +1138,35 @@
                 const editArea = document.createElement('div');
                 editArea.className = 'settings-preset-edit-area';
 
+                // emoji 行
+                const emojiRow = document.createElement('div');
+                emojiRow.style.cssText = 'display:flex;gap:5px;flex-wrap:wrap;padding-bottom:4px;';
+                _presetEmojiOptions.forEach(e => {
+                    const eb = document.createElement('button');
+                    eb.type = 'button';
+                    eb.textContent = e;
+                    eb.style.cssText = 'width:28px;height:28px;border-radius:6px;border:1.5px solid ' + (e === preset.emoji ? 'var(--msg-user)' : 'var(--border-color)') + ';background:' + (e === preset.emoji ? 'var(--bg-sidebar-active)' : 'var(--input-bg)') + ';font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;transition:border-color .15s,background .15s;';
+                    eb.onclick = (ev) => {
+                        ev.stopPropagation();
+                        emojiRow.querySelectorAll('button').forEach(b => {
+                            b.style.borderColor = 'var(--border-color)';
+                            b.style.background = 'var(--input-bg)';
+                        });
+                        eb.style.borderColor = 'var(--msg-user)';
+                        eb.style.background = 'var(--bg-sidebar-active)';
+                        const idx = promptPresets.findIndex(p => p.id === preset.id);
+                        if (idx > -1) {
+                            promptPresets[idx].emoji = e;
+                            savePresets();
+                            renderPopupPresets();
+                            updateSysPromptBtn();
+                            // 更新行里的emoji显示
+                            nameEl.textContent = e + ' ' + promptPresets[idx].name;
+                        }
+                    };
+                    emojiRow.appendChild(eb);
+                });
+
                 const nameInput = document.createElement('input');
                 nameInput.className = 'settings-preset-edit-name';
                 nameInput.type = 'text';
@@ -1193,37 +1180,28 @@
                 contentTA.placeholder = '提示词内容...';
                 contentTA.onclick = e => e.stopPropagation();
 
-                const footer = document.createElement('div');
-                footer.className = 'settings-preset-edit-footer';
-
-                const cancelBtn = document.createElement('button');
-                cancelBtn.className = 'sp-edit-cancel-btn';
-                cancelBtn.textContent = '取消';
-                cancelBtn.onclick = (e) => { e.stopPropagation(); editArea.classList.remove('open'); };
-
-                const saveBtn = document.createElement('button');
-                saveBtn.className = 'sp-edit-save-btn';
-                saveBtn.textContent = '保存';
-                saveBtn.onclick = (e) => {
-                    e.stopPropagation();
+                // 自动保存函数
+                const autoSave = () => {
                     const newName = nameInput.value.trim();
                     const newContent = contentTA.value.trim();
-                    if (!newName) { nameInput.focus(); return; }
+                    if (!newName) return;
                     const idx = promptPresets.findIndex(p => p.id === preset.id);
-                    if (idx > -1) {
+                    if (idx > -1 && (promptPresets[idx].name !== newName || promptPresets[idx].content !== newContent)) {
                         promptPresets[idx].name = newName;
                         promptPresets[idx].content = newContent;
                         savePresets();
-                        renderSettingsPromptTab();
                         renderPopupPresets();
+                        updateSysPromptBtn();
+                        nameEl.textContent = (promptPresets[idx].emoji ? promptPresets[idx].emoji + ' ' : '') + newName;
+                        previewEl.textContent = newContent;
                     }
                 };
+                nameInput.addEventListener('blur', autoSave);
+                contentTA.addEventListener('blur', autoSave);
 
-                footer.appendChild(cancelBtn);
-                footer.appendChild(saveBtn);
+                editArea.appendChild(emojiRow);
                 editArea.appendChild(nameInput);
                 editArea.appendChild(contentTA);
-                editArea.appendChild(footer);
 
                 item.appendChild(row);
                 item.appendChild(editArea);
@@ -1284,19 +1262,6 @@
             });
         }
 
-        function onDefaultPresetSelectChange() {
-            const sel = document.getElementById('default-preset-select');
-            if (!sel) return;
-            saveDefaultPresetId(sel.value ? Number(sel.value) : null);
-        }
-
-        function togglePresetsPanel() {
-            presetsOpen = !presetsOpen;
-            const list = document.getElementById('sp-presets-list');
-            const toggle = document.getElementById('sp-presets-toggle');
-            if (list) list.classList.toggle('open', presetsOpen);
-            if (toggle) toggle.classList.toggle('open', presetsOpen);
-        }
         // ────────────────────────────────────────────────────────
 
         function getModelAlias(m) {
@@ -1625,6 +1590,7 @@
         // ─────────────────────────────────────────────────────────
 
         function init() {
+            localStorage.removeItem('gemini_default_preset_id');
             chats.forEach(c => { if (!c.queue) c.queue = []; });
             dom.apiKey.value = localStorage.getItem('gemini_api_key') || '';
             dom.apiKey.addEventListener('input', () => localStorage.setItem('gemini_api_key', dom.apiKey.value));
@@ -1959,10 +1925,18 @@
             const chat = chats.find(c => c.id == currentChatId);
             if (chat) { chat.systemPrompt = val; saveData(); }
             if (!chat) { globalSystemPrompt = val; localStorage.setItem('gemini_system_prompt', val); }
-            // 清空按钮：有内容才显示
             const clearBtn = document.getElementById('sp-clear-btn');
-            if (clearBtn) clearBtn.style.display = val.trim() ? 'flex' : 'none';
+            if (clearBtn) clearBtn.style.visibility = val.trim() ? 'visible' : 'hidden';
             updateSysPromptBtn();
+            // 收藏按钮：已收藏则实心
+            const saveBtn = document.getElementById('sp-save-btn');
+            if (saveBtn) {
+                const isSaved = val.trim() && promptPresets.some(p => p.content === val.trim());
+                saveBtn.innerHTML = isSaved
+                    ? '<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>'
+                    : '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>';
+                saveBtn.style.color = '';
+            }
         }
 
         function autoResizeSysPromptTA(ta) {
@@ -2080,7 +2054,7 @@
                 // 关闭 sysprompt popup
                 if (!e.target.closest('#sysprompt-popup-container')) {
                     const sp = document.getElementById('sysprompt-popup');
-                    if (sp) sp.style.display = 'none';
+                    if (sp) { sp.style.display = 'none'; document.getElementById('sysprompt-btn').classList.remove('popup-open'); }
                 }
                 // 关闭 history popup
                 if (!e.target.closest('#history-popup-container')) dom.historyPopup.classList.remove('active');
@@ -2107,6 +2081,16 @@
                 e.preventDefault();
                 showContextMenu(e.clientX, e.clientY, [{ label: '🖼️ 上传附件', action: () => document.getElementById('img-file-input').click() }]);
             });
+            document.getElementById('preset-name-dialog').addEventListener('click', (e) => {
+                if (e.target === document.getElementById('preset-name-dialog')) closePresetNameDialog();
+            });
+            document.getElementById('sysprompt-btn').addEventListener('contextmenu', (e) => {
+                e.preventDefault(); e.stopPropagation();
+                showContextMenu(e.clientX, e.clientY, [
+                    { label: '🗑️ 清空当前提示词', action: () => clearSysPrompt() },
+                    { label: '⚙️ 打开提示词设置', action: () => { switchTab('tab-prompt'); openSettings(); } }
+                ]);
+            });
 
             dom.chatArea.addEventListener('click', (e) => {
                 const preOrCode = e.target.tagName === 'PRE' || e.target.tagName === 'CODE';
@@ -2128,10 +2112,11 @@
         function toggleSysPromptPopup(e) {
             if (e) e.stopPropagation();
             const popup = document.getElementById('sysprompt-popup');
+            const btn = document.getElementById('sysprompt-btn');
             const isOpen = popup.style.display === 'block';
             // 关闭 history popup
             dom.historyPopup.classList.remove('active');
-            if (isOpen) { popup.style.display = 'none'; return; }
+            if (isOpen) { popup.style.display = 'none'; btn.classList.remove('popup-open'); return; }
 
             const chat = chats.find(c => c.id == currentChatId);
             const chatPrompt = chat && chat.systemPrompt != null ? chat.systemPrompt : null;
@@ -2141,17 +2126,12 @@
 
             // 清空按钮显隐
             const clearBtn = document.getElementById('sp-clear-btn');
-            if (clearBtn) clearBtn.style.display = activePrompt.trim() ? 'flex' : 'none';
+            if (clearBtn) clearBtn.style.visibility = activePrompt.trim() ? 'visible' : 'hidden';
 
-            // 预设列表：≤5条默认展开，>5条按上次状态
-            if (promptPresets.length <= 5) { presetsOpen = true; }
             renderPopupPresets();
-            const list = document.getElementById('sp-presets-list');
-            const toggle = document.getElementById('sp-presets-toggle');
-            if (list) list.classList.toggle('open', presetsOpen);
-            if (toggle) toggle.classList.toggle('open', presetsOpen);
 
             popup.style.display = 'block';
+            btn.classList.add('popup-open');
             ta.focus();
         }
 
@@ -2165,20 +2145,39 @@
             ta.value = '';
             onSysPromptInput('');
             document.getElementById('sysprompt-popup').style.display = 'none';
+            document.getElementById('sysprompt-btn').classList.remove('popup-open');
         }
+
+        const _sysPromptBtnOrigHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><g transform="scale(-1,1) translate(-24,0)"><path d="M15 4V2"/><path d="M15 16v-2"/><path d="M8 9h2"/><path d="M20 9h2"/><path d="M17.8 11.8 19 13"/><path d="M15 9h.01"/><path d="M17.8 6.2 19 5"/><path d="m3 21 9-9"/><path d="M12.2 6.2 11 5"/></g></svg>';
 
         function updateSysPromptBtn() {
             const btn = document.getElementById('sysprompt-btn'); if (!btn) return;
             const chat = chats.find(c => c.id == currentChatId);
-            // 强调色：当前对话有自己的提示词，或全局 systemPrompt 有内容
-            // 注意：globalSystemPrompt 会在清空时被置为空，不受"默认预设"影响
             const chatPrompt = chat && chat.systemPrompt != null ? chat.systemPrompt : null;
             const effectivePrompt = chatPrompt !== null ? chatPrompt : globalSystemPrompt;
             btn.classList.toggle('has-prompt', !!effectivePrompt);
+            // 找匹配的 preset emoji
+            const matched = effectivePrompt ? promptPresets.find(p => p.content === effectivePrompt) : null;
+            const tooltip = btn.querySelector('.sp-tooltip');
+            if (effectivePrompt) {
+                const emojiToShow = (matched && matched.emoji) ? matched.emoji : '📝';
+                btn.innerHTML = `<span style="font-size:16px;line-height:1;">${emojiToShow}</span>`;
+            } else {
+                btn.innerHTML = _sysPromptBtnOrigHTML;
+            }
+            // 重建 tooltip（innerHTML 会清掉它）
+            const t = document.createElement('div');
+            t.className = 'sp-tooltip';
+            t.textContent = effectivePrompt || '系统提示词为空';
+            btn.appendChild(t);
         }
 
         function toggleSearch() { isSearchEnabled = !isSearchEnabled; localStorage.setItem('gemini_search', isSearchEnabled); updateSearchBtnUI(); }
-        function updateSearchBtnUI() { dom.searchBtn.classList.toggle('active', isSearchEnabled); dom.searchBtn.title = isSearchEnabled ? '联网搜索已开启：AI 可实时获取最新资讯' : '联网搜索已关闭'; }
+        function updateSearchBtnUI() {
+            dom.searchBtn.classList.toggle('active', isSearchEnabled);
+            const tooltip = dom.searchBtn.querySelector('.sp-tooltip');
+            if (tooltip) tooltip.textContent = isSearchEnabled ? '联网搜索已开启' : '联网搜索已关闭';
+        }
         function openSettings() { isListeningShortcut = null; renderShortcutsUI(); document.getElementById('settings-modal').style.display = 'flex'; }
         function closeSettings() { document.getElementById('settings-modal').style.display = 'none'; }
 
@@ -2229,16 +2228,9 @@
         function createNewChat() {
             collapseInput();
             currentChatId = null;
-            // 新建对话时，若有全局默认预设，将其内容写入 globalSystemPrompt
-            // （不写入对话级，这样新对话会直接继承全局，符合"默认"语义）
-            if (defaultPresetId !== null) {
-                const preset = promptPresets.find(p => p.id === defaultPresetId);
-                if (preset) {
-                    globalSystemPrompt = preset.content;
-                    systemPrompt = preset.content;
-                    localStorage.setItem('gemini_system_prompt', preset.content);
-                }
-            }
+            globalSystemPrompt = '';
+            systemPrompt = '';
+            localStorage.setItem('gemini_system_prompt', '');
             syncSelectUIs(); renderSidebar(); renderChatArea(); updateInputUI();
             setTimeout(updateSysPromptBtn, 0);
             dom.sidebar.classList.remove('collapsed'); dom.input.focus();
