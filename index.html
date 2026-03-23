@@ -387,20 +387,30 @@
         .sp-presets-title { font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; display: block; }
         .sp-presets-grid { display: flex; flex-wrap: wrap; gap: 6px; }
         .sp-preset-pill {
-            display: flex; align-items: center; gap: 5px;
-            padding: 4px 10px; border: 1px solid var(--border-color); border-radius: 20px;
-            background: var(--bg-main); cursor: pointer; transition: background 0.12s, border-color 0.12s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 12px;
+            border: 1px solid var(--border-color); 
+            border-radius: 20px;
+            background: var(--bg-main);
+            cursor: pointer;
+            transition: all 0.0s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        .sp-preset-pill:hover { background: var(--bg-sidebar-hover); border-color: var(--text-muted); }
+        .sp-preset-pill:hover {
+            background: var(--bg-sidebar-hover);
+            border-color: transparent;
+
+        }
         .sp-preset-pill-emoji { font-size: 14px; line-height: 1; }
-        .sp-preset-pill-name { font-size: 12px; color: var(--text-main); white-space: nowrap; }
+        .sp-preset-pill-name { font-size: 12px; color: var(--text-muted); white-space: nowrap; }
         .sp-presets-empty { font-size: 12px; color: var(--text-muted); font-style: italic; }
 
         /* 编辑区 */
         .sp-edit-area { position: relative; }
         #sysprompt-input {
             width: 100%; height: 120px; border: none; background: transparent;
-            color: var(--text-main); font-size: 13px; line-height: 1.6;
+            color: var(--text-muted); font-size: 14px; line-height: 1.6;
             padding: 10px 12px 28px 12px; resize: none; outline: none; font-family: inherit;
             overflow-y: auto;
         }
@@ -417,7 +427,7 @@
         .sp-save-btn:hover { background: var(--bg-sidebar-hover); color: var(--text-main); }
         .sp-clear-btn {
             background: none; border: none; color: var(--text-muted); cursor: pointer;
-            padding: 3px; border-radius: 4px; display: flex; align-items: center; justify-content: center;
+            padding: 6px; border-radius: 6px; display: flex; align-items: center; justify-content: center;
             transition: color 0.15s, background 0.15s;
         }
         .sp-clear-btn:hover { color: var(--text-main); background: var(--bg-sidebar-hover); }
@@ -442,7 +452,7 @@
             border-radius: 8px; background: var(--input-bg); color: var(--text-main);
             font-size: 14px; outline: none; font-family: inherit; transition: border-color 0.2s;
         }
-        .preset-name-box input:focus { border-color: var(--msg-user); }
+        .preset-name-box input:focus { border-color: var(--border-color); }
         .preset-name-actions { display: flex; gap: 8px; justify-content: flex-end; }
         .preset-name-actions button {
             padding: 7px 16px; border-radius: 7px; border: 1px solid var(--border-color);
@@ -586,7 +596,7 @@
                                 <div class="sp-popup-header">
                                     <span class="sp-popup-title">系统提示词</span>
                                     <button class="sp-clear-btn" id="sp-clear-btn" onclick="clearSysPrompt()" title="清空提示词" style="visibility:hidden;">
-                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.9-9.9c1-1 2.5-1 3.4 0l4.3 4.3c1 1 1 2.5 0 3.4L10.5 21z"></path><path d="m11 9 4 4"></path></svg>
                                     </button>
                                 </div>
 
@@ -697,15 +707,20 @@
     <div id="preset-name-dialog">
         <div class="preset-name-box" onclick="event.stopPropagation()">
             <h4>收藏提示词</h4>
-            <input type="text" id="preset-name-input" placeholder="给这条提示词起个名字..." maxlength="30" />
+            <div style="display: flex; gap: 8px; align-items: stretch; width: 100%;">
+                <div id="selected-emoji-display" style="width: 38px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--input-bg); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; user-select: none;">
+                    💡
+                </div>
+                <input type="text" id="preset-name-input" placeholder="给这条提示词起个名字..." maxlength="30" style="flex: 1; margin: 0;" />
+            </div>
             <div style="display:flex;flex-direction:column;gap:8px;">
                 <div style="font-size:12px;font-weight:600;color:var(--text-main);">选择图标 <span id="preset-emoji-required" style="color:#ef4444;display:none;">*必选</span></div>
                 <div id="preset-emoji-grid" style="display:grid;grid-template-columns:repeat(8,1fr);gap:5px;"></div>
             </div>
-            <input type="hidden" id="preset-emoji-input" value="" />
+            <input type="hidden" id="preset-emoji-input" value="💡" />
             <div class="preset-name-actions">
                 <button class="preset-name-cancel" onclick="closePresetNameDialog()">取消</button>
-                <button class="preset-name-confirm" onclick="confirmSavePreset()">收藏</button>
+                <button class="preset-name-cancel" onclick="confirmSavePreset()">完成</button>
             </div>
         </div>
     </div>
@@ -940,7 +955,7 @@
             localStorage.setItem('gemini_prompt_presets', JSON.stringify(promptPresets));
         }
 
-        const _presetEmojiOptions = ['💡','🗝️','📚','🗺️','🔬','🛋️','💵','💎','☀️','🌙','⚡️','⭐','🌑','🌓','🌠','🌌','👽','🛸','👾','🤖','🛰️','🪐','🧬','🚀','🦄','👁️','👹','😈','💀','🧙‍♂️','🧌','🐲','😀','🤩','😂','🧐','😎','🤓','🤐','🤥','😊','😅','😇','🤯','🤫','😌','😶‍🌫️','🤪'];
+        const _presetEmojiOptions = ['💡','🗝️','📚','🗺️','🔬','🔦','💵','💎','📟','📺','📦','🧺','🪜','🛋️','🖼️','🪴','⛲','🎢','🛤️','🏗️','🚧','🏬','💈','🏜️','🌱','🌻','🍄','🦋','🪨','🪵','🌊','🔥','☀️','🌙','✨','🪐','🌍','🛸','📡','🛰️','🦄','💀','👽','😈','👾','🧙‍♂️','🧌','🐲','😀','🤩','😂','🧐','😎','🤓','🤐','🤥','😊','😅','😇','🤯','🤫','😌','😶‍🌫️','🤪'];
 
         function renderEmojiGrid(selectedEmoji) {
             const grid = document.getElementById('preset-emoji-grid');
@@ -952,13 +967,25 @@
                 btn.textContent = e;
                 btn.type = 'button';
                 btn.onclick = () => {
-                    document.getElementById('preset-emoji-input').value = e;
+                    const currentInput = document.getElementById('preset-emoji-input');
+                    if (currentInput.value === e) {
+                        confirmSavePreset();
+                        return;
+                    }
+                    currentInput.value = e;
+                    const displayBox = document.getElementById('selected-emoji-display');
+                    if (displayBox) {
+                        // 没有任何附加动画，瞬间替换字符
+                        displayBox.textContent = e;
+                    }
                     grid.querySelectorAll('.preset-emoji-btn').forEach(b => b.classList.remove('selected'));
                     btn.classList.add('selected');
+                    document.getElementById('preset-name-input').focus();
                 };
                 grid.appendChild(btn);
             });
         }
+
 
         function closePresetNameDialog() {
             document.getElementById('preset-name-dialog').classList.remove('active');
@@ -975,8 +1002,14 @@
             const dialog = document.getElementById('preset-name-dialog');
             const nameInput = document.getElementById('preset-name-input');
             nameInput.value = '';
-            document.getElementById('preset-emoji-input').value = '';
-            renderEmojiGrid('');
+            
+            // 设定默认 Emoji，这样用户不必每次都选，输入文字后可直接秒按回车保存
+            const defaultEmoji = '💡';
+            document.getElementById('preset-emoji-input').value = defaultEmoji;
+            const displayBox = document.getElementById('selected-emoji-display');
+            if (displayBox) displayBox.textContent = defaultEmoji;
+            
+            renderEmojiGrid(defaultEmoji);
             dialog.classList.add('active');
             setTimeout(() => nameInput.focus(), 50);
         }
@@ -2088,7 +2121,7 @@
                 e.preventDefault(); e.stopPropagation();
                 showContextMenu(e.clientX, e.clientY, [
                     { label: '🗑️ 清空当前提示词', action: () => clearSysPrompt() },
-                    { label: '⚙️ 打开提示词设置', action: () => { switchTab('tab-prompt'); openSettings(); } }
+                    //{ label: '⚙️ 打开提示词设置', action: () => { switchTab('tab-prompt'); openSettings(); } }
                 ]);
             });
 
