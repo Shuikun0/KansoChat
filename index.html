@@ -230,9 +230,39 @@
         .message.bot { background-color: var(--msg-bot); color: var(--text-main); border-bottom-left-radius: 2px; }
         .message.user { background-color: var(--msg-user); color: var(--msg-user-text); border-bottom-right-radius: 2px; transition: background-color 0.3s; white-space: pre-wrap; word-wrap: break-word; }
 
-        @keyframes queuedShimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
-        .message-row.queued .message { opacity: 0.85; }
-        .message-row.queued .message.user { background-image: linear-gradient(110deg, transparent 35%, rgba(255, 255, 255, 0.12) 45%, rgba(255, 255, 255, 0.22) 50%, rgba(255, 255, 255, 0.12) 55%, transparent 65%); background-size: 200% 100%; animation: queuedShimmer 3s infinite linear; }
+        /* 队列中：Material 式斜向高光扫过（骨架屏 / 占位内容经典动画） */
+        @keyframes queuedMdShimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+        .message-row.queued .message { opacity: 1; }
+        .message-row.queued .message.user {
+            color: var(--msg-user-text);
+            border: none;
+            box-shadow: none;
+            background-color: color-mix(in srgb, var(--msg-user) 42%, transparent);
+            background-image: linear-gradient(105deg, transparent 38%, rgba(255, 255, 255, 0.06) 44%, rgba(255, 255, 255, 0.22) 50%, rgba(255, 255, 255, 0.06) 56%, transparent 62%);
+            background-size: 200% 100%;
+            background-repeat: no-repeat;
+            animation: queuedMdShimmer 1.4s linear infinite;
+        }
+
+        @keyframes queue-solidify-in {
+            0% {
+                background-color: color-mix(in srgb, var(--msg-user) 42%, transparent);
+                background-image: linear-gradient(105deg, transparent 38%, rgba(255, 255, 255, 0.06) 44%, rgba(255, 255, 255, 0.22) 50%, rgba(255, 255, 255, 0.06) 56%, transparent 62%);
+                background-size: 200% 100%;
+                background-repeat: no-repeat;
+            }
+            100% {
+                background-color: var(--msg-user);
+                background-image: none;
+            }
+        }
+        .message-row.user.queue-solidify .message.user {
+            animation: queue-solidify-in 0.7s ease forwards;
+            transition: none;
+        }
 
         .divider-row { display: flex; align-items: center; justify-content: center; width: 100%; max-width: 900px; margin: 10px auto; color: var(--text-muted); font-size: 12px; font-weight: 500; user-select: none; }
         .divider-row::before, .divider-row::after { content: ''; flex: 1; border-top: 1px dashed var(--border-color); margin: 0 15px; }
@@ -260,6 +290,8 @@
 
         textarea { flex: 1; border: none; background: transparent; color: var(--text-main); font-size: 15px; resize: none; outline: none; padding: 8px; font-family: inherit; height: 40px; max-height: 200px; overflow-y: auto; }
         textarea.expanded { height: 75vh !important; max-height: 75vh !important; }
+        /* 程序拉回焦点时隐藏光标，避免「像一直在编辑」；点击输入区或开始输入/IME 组合后恢复 */
+        #message-input.ambient-focus { caret-color: transparent; }
 
         .action-btn { border: none; border-radius: 8px; padding: 0; cursor: pointer; font-weight: 600; transition: 0.2s; font-size: 14px; }
         #send-btn {
@@ -341,7 +373,10 @@
         .context-menu-item { padding: 10px 16px; font-size: 13px; cursor: pointer; color: var(--text-main); display: flex; align-items: center; gap: 8px; }
         .context-menu-item:hover { background: var(--bg-sidebar-hover); }
 
-        .loading-pulse { animation: pulse 1.5s infinite; opacity: 0.8; font-weight: 500; }
+        .thinking-inline-wrap { display: inline-flex; align-items: baseline; gap: 3px; flex-wrap: wrap; }
+        .thinking-inline-wrap .time-badge { margin-left: 0; }
+        .thinking-loading { font-weight: 500; display: inline-flex; align-items: baseline; gap: 0; }
+        .thinking-dots { display: inline-block; min-width: 3ch; text-align: left; font-weight: 500; }
         .time-badge { font-family: monospace; font-size: 12px; color: var(--text-muted); background: var(--bg-sidebar-hover); padding: 2px 6px; border-radius: 4px; margin-left: 5px; }
 
         @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
@@ -573,6 +608,41 @@
             color: var(--text-muted); white-space: nowrap; z-index: 300; pointer-events: none;
         }
         #search-toggle-btn:hover .sp-tooltip { display: block; }
+
+        #send-btn-wrap {
+            position: relative;
+            display: flex;
+            flex-shrink: 0;
+            align-self: stretch;
+        }
+        #send-btn-wrap .send-tooltip {
+            display: none;
+            position: absolute;
+            bottom: calc(100% + 8px);
+            right: 0;
+            background: var(--bg-main);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+            padding: 8px 12px;
+            font-size: 12px;
+            color: var(--text-muted);
+            white-space: pre-line;
+            z-index: 300;
+            pointer-events: none;
+            text-align: left;
+            line-height: 1.5;
+            min-width: max-content;
+            max-width: 260px;
+        }
+        #send-btn-wrap:hover .send-tooltip { display: block; }
+
+        .api-key-hint {
+            font-size: 12px;
+            color: var(--text-muted);
+            line-height: 1.5;
+            margin: 6px 0 0 0;
+        }
     </style>
 </head>
 
@@ -732,10 +802,13 @@
             <div id="input-container">
                 <div class="input-box-wrapper">
                     <div class="input-box">
-                        <textarea id="message-input" placeholder="输入消息... [ Cmd+Enter 发送 ]" rows="1"></textarea>
-                        <button id="send-btn" class="action-btn" onclick="handleSendAction()" title="发送 (Cmd+Enter)">
-                            <svg width="16" height="16" viewBox="0 0 24 26" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="21" x2="12" y2="7"/><polyline points="5 14 12 7 19 14"/></svg>
-                        </button>
+                        <textarea id="message-input" placeholder="有什么，尽管问" rows="1"></textarea>
+                        <span id="send-btn-wrap">
+                            <button type="button" id="send-btn" class="action-btn" onclick="handleSendAction()">
+                                <svg width="16" height="16" viewBox="0 0 24 26" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="21" x2="12" y2="7"/><polyline points="5 14 12 7 19 14"/></svg>
+                            </button>
+                            <div class="send-tooltip" id="send-btn-tooltip" aria-hidden="true"></div>
+                        </span>
                         <button id="stop-btn" class="action-btn" onclick="cancelMessage()" title="取消">
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>
                         </button>
@@ -874,7 +947,20 @@
 
                     <div class="setting-block" style="margin-top: 15px;">
                         <label style="display:flex; flex-direction: column; gap: 4px;">
-                            自动下拉到底部（发送/接收）
+                            主输入框发送键
+                            <span style="font-size: 12px; color: var(--text-muted); font-weight: normal; line-height: 1.4;">
+                                选择用 Enter 还是 Cmd/Ctrl+Enter 发送文本。当使用 Enter 发送文本时，使用 Shift + Enter 换行。
+                            </span>
+                        </label>
+                        <div class="segment-group" style="margin-bottom: 5px;">
+                            <button class="segment-btn" data-enter-mode="mod_enter" onclick="setEnterSendMode('mod_enter')">Cmd/Ctrl+Enter 发送</button>
+                            <button class="segment-btn" data-enter-mode="enter_send" onclick="setEnterSendMode('enter_send')">Enter 发送</button>
+                        </div>
+                    </div>
+
+                    <div class="setting-block" style="margin-top: 15px;">
+                        <label style="display:flex; flex-direction: column; gap: 4px;">
+                            发送/接受消息时自动下拉到底部
                             <span style="font-size: 12px; color: var(--text-muted); font-weight: normal; line-height: 1.4;">
                                 关闭后：消息更新时不会自动滚动，只在底部显示「到底部」按钮
                             </span>
@@ -908,8 +994,9 @@
                         以下快捷键均以 <kbd style="background:var(--bg-sidebar-active);border:1px solid var(--border-color);border-radius:4px;padding:1px 5px;font-family:monospace;">Alt</kbd> 为触发前缀。
                     </div>
                     <div class="setting-block">
-                        <div class="shortcut-item"><span>快速新建空对话</span> <button class="shortcut-btn" id="sc-newChat" onclick="listenShortcut('newChat')"></button></div>
-                        <div class="shortcut-item"><span>沉浸全屏输入框</span> <button class="shortcut-btn" id="sc-expandInput" onclick="listenShortcut('expandInput')"></button></div>
+                        <div class="shortcut-item"><span>新建空对话</span> <button class="shortcut-btn" id="sc-newChat" onclick="listenShortcut('newChat')"></button></div>
+                        <div class="shortcut-item"><span>放大/收起输入框</span> <button class="shortcut-btn" id="sc-expandInput" onclick="listenShortcut('expandInput')"></button></div>
+                        <div class="shortcut-item"><span>打开/关闭系统提示词窗口</span> <button class="shortcut-btn" id="sc-sysPromptPopup" onclick="listenShortcut('sysPromptPopup')"></button></div>
                         <div class="shortcut-item"><span>宽屏展开/收起边栏</span> <button class="shortcut-btn" id="sc-toggleSidebar" onclick="listenShortcut('toggleSidebar')"></button></div>
                         <div class="shortcut-item"><span>向左/右无缝切对话</span>
                             <div style="display:flex; gap:5px;"><button class="shortcut-btn" id="sc-switchPrev" onclick="listenShortcut('switchPrev')" style="min-width: 40px;"></button> <button class="shortcut-btn" id="sc-switchNext" onclick="listenShortcut('switchNext')" style="min-width: 40px;"></button></div>
@@ -921,7 +1008,7 @@
                     <button class="modal-btn" onclick="resetShortcuts()" style="margin-top: 5px;">🔄 恢复默认快捷键</button>
                     <div class="shortcut-list-static" style="margin-top: 10px; border-top: 1px solid var(--border-color); padding-top:10px;">
                         <p style="margin: 0 0 5px 0; font-weight:600; color:var(--text-main);">系统级快捷键 (不可改)</p>
-                        <kbd>Cmd/Ctrl + Enter</kbd> 发送消息 (或排队发送) <br>
+                        <kbd>Cmd/Ctrl + Enter</kbd> 或 <kbd>Enter</kbd>（取决于「主输入框发送键」设置）发送消息 <br>
                         <kbd>Cmd/Ctrl + F</kbd> 搜索当前对话 <br>
                         <kbd>Cmd/Ctrl + K</kbd> 插入/撤销上下文清除线 <br>
                         <kbd>Cmd/Ctrl + 点击删除</kbd> 免确认极速删除对话 <br>
@@ -948,7 +1035,7 @@
                     <div class="setting-block">
                         <label>Google Gemini API Key</label>
                         <div class="api-key-wrapper">
-                            <input type="password" id="api-key" placeholder="在此填入您的 API Key">
+                            <input type="password" id="api-key" placeholder="在此填入您的 API Key" autocomplete="off" spellcheck="false">
                             <button class="icon-btn" onclick="toggleApiKey()" title="显示/隐藏密码">
                                 <svg id="eye-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
@@ -962,6 +1049,7 @@
                                 </svg>
                             </button>
                         </div>
+                        <p class="api-key-hint">密钥保存在本机浏览器本地，请按需保管。若设备会与他人共用，可改用后端代理等方式。</p>
                     </div>
                     <div class="setting-block" style="margin-top: 15px;">
                         <label>数据管理</label>
@@ -1002,6 +1090,8 @@
         let historyLimit = localStorage.getItem('gemini_history_limit') ? parseInt(localStorage.getItem('gemini_history_limit')) : 999;
         let showTokenEstimate = localStorage.getItem('gemini_show_token_est') !== 'false';
         let autoScrollBottom = localStorage.getItem('gemini_auto_scroll_bottom') !== 'false';
+        /** mod_enter：Cmd/Ctrl+Enter 发送；enter_send：Enter 发送、Shift+Enter 换行 */
+        let enterSendMode = localStorage.getItem('gemini_enter_send_mode') || 'mod_enter';
         let showJumpToBottomHint = false;
         let forceSnapToBottomAfterRender = false;
 
@@ -1379,8 +1469,8 @@
             if (lbl) lbl.textContent = getModelAlias(m);
         }
 
-        const defaultShortcuts = { newChat: 'KeyN', expandInput: 'KeyF', toggleSidebar: 'KeyB', jumpUp: 'ArrowUp', jumpDown: 'ArrowDown', switchPrev: 'ArrowLeft', switchNext: 'ArrowRight' };
-        let userShortcuts = JSON.parse(localStorage.getItem('gemini_shortcuts')) || { ...defaultShortcuts };
+        const defaultShortcuts = { newChat: 'KeyN', expandInput: 'KeyF', sysPromptPopup: 'KeyP', toggleSidebar: 'KeyB', jumpUp: 'ArrowUp', jumpDown: 'ArrowDown', switchPrev: 'ArrowLeft', switchNext: 'ArrowRight' };
+        let userShortcuts = { ...defaultShortcuts, ...(JSON.parse(localStorage.getItem('gemini_shortcuts')) || {}) };
         let isListeningShortcut = null;
 
         function getHeaderHeight() { return 57; }
@@ -1469,7 +1559,18 @@
             }).catch(err => alert("复制失败: " + err));
         }
 
-        setInterval(() => { document.querySelectorAll('.loading-time').forEach(el => { el.innerText = ((Date.now() - parseInt(el.dataset.start)) / 1000).toFixed(1) + ' 秒'; }); }, 100);
+        let thinkingDotsFrame = 0;
+        let loadingTick = 0;
+        const THINKING_DOT_FRAMES = ['.', '..', '...'];
+        setInterval(() => {
+            document.querySelectorAll('.loading-time').forEach(el => { el.innerText = ((Date.now() - parseInt(el.dataset.start)) / 1000).toFixed(1) + ' 秒'; });
+            loadingTick++;
+            if (loadingTick % 6 === 0) {
+                thinkingDotsFrame = (thinkingDotsFrame + 1) % THINKING_DOT_FRAMES.length;
+                const dots = THINKING_DOT_FRAMES[thinkingDotsFrame];
+                document.querySelectorAll('.thinking-dots').forEach(el => { el.textContent = dots; });
+            }
+        }, 100);
 
         const dom = {
             sidebar: document.getElementById('sidebar'), chatList: document.getElementById('chat-list'),
@@ -1547,6 +1648,7 @@
             clearDomHighlights();
             inlineMatches = []; inlineCursor = -1;
             document.getElementById('search-bar-counter').innerText = '';
+            refocusMessageInputSoft();
         }
 
         function runInlineSearch(keyword) {
@@ -1626,6 +1728,7 @@
             document.getElementById('search-panel').classList.remove('active');
             searchResultsList = []; searchActiveCursor = -1;
             clearDomHighlights();
+            refocusMessageInputSoft();
         }
 
         function handleSearchPanelClick(e) {
@@ -1799,6 +1902,7 @@
                 if (e.key === 'Enter') { e.preventDefault(); confirmSavePreset(); }
                 if (e.key === 'Escape') closePresetNameDialog();
             });
+            setTimeout(() => tryInitialMessageInputFocus(), 0);
         }
 
         function collapseInput() {
@@ -1841,7 +1945,7 @@
                 const btn = e.currentTarget; const origHtml = btn.innerHTML;
                 btn.innerHTML = '<span style="font-size: 13px; font-weight: bold;">✔</span>';
                 setTimeout(() => btn.innerHTML = origHtml, 1500);
-            });
+            }).catch(err => alert("复制失败: " + err));
         }
 
         function initSortable(containerId, type) {
@@ -2059,7 +2163,9 @@
             // 关闭 sysprompt popup
             const sp = document.getElementById('sysprompt-popup');
             if (sp && sp.style.display === 'block') { sp.style.display = 'none'; }
+            const wasActive = dom.historyPopup.classList.contains('active');
             dom.historyPopup.classList.toggle('active');
+            if (wasActive && !dom.historyPopup.classList.contains('active')) refocusMessageInputSoft();
         }
 
         window.handleSliderChange = function (sliderIndex) { setHistoryLimit(historySteps[sliderIndex]); };
@@ -2084,6 +2190,7 @@
             currentTheme = localStorage.getItem('gemini_theme') || 'auto';
             currentFont = localStorage.getItem('gemini_fontsize') || '15px';
             currentAccent = localStorage.getItem('gemini_accent') || '#10a37f';
+            enterSendMode = localStorage.getItem('gemini_enter_send_mode') || 'mod_enter';
             document.querySelectorAll('.segment-btn[data-theme-val]').forEach(b => b.classList.remove('active'));
             document.querySelector(`.segment-btn[data-theme-val="${currentTheme}"]`)?.classList.add('active');
             document.querySelectorAll('button[data-collapse-val]').forEach(b => b.classList.remove('active'));
@@ -2099,7 +2206,43 @@
 
             document.querySelectorAll('button[data-autoscroll-val]').forEach(b => b.classList.remove('active'));
             document.querySelector(`button[data-autoscroll-val="${autoScrollBottom}"]`)?.classList.add('active');
+            document.querySelectorAll('button[data-enter-mode]').forEach(b => b.classList.remove('active'));
+            document.querySelector(`button[data-enter-mode="${enterSendMode}"]`)?.classList.add('active');
+            updateSendKeyHints();
             updateJumpToBottomBtn();
+        }
+
+        function setEnterSendMode(mode) {
+            enterSendMode = mode;
+            localStorage.setItem('gemini_enter_send_mode', mode);
+            document.querySelectorAll('button[data-enter-mode]').forEach(b => b.classList.remove('active'));
+            document.querySelector(`button[data-enter-mode="${mode}"]`)?.classList.add('active');
+            updateSendKeyHints();
+        }
+
+        function updateSendKeyHints() {
+            if (dom.input) dom.input.placeholder = '有问题，尽管问';
+            const tip = document.getElementById('send-btn-tooltip');
+            if (tip) {
+                if (enterSendMode === 'enter_send') {
+                    tip.textContent = 'Enter 发送\nShift+Enter 换行\nCmd/Ctrl+Enter 也可发送';
+                } else {
+                    tip.textContent = 'Cmd/Ctrl+Enter 发送\nEnter 换行';
+                }
+            }
+        }
+
+        /** 欢迎页仅展示六项；组合键与设置中的自定义快捷键一致 */
+        function getWelcomeShortcutPackItemsHtml() {
+            const fk = (code) => formatKey(code);
+            return [
+                `<div class="kanso-shortcut-item"><b>Alt+${fk(userShortcuts.jumpUp)}/${fk(userShortcuts.jumpDown)}</b>跳气泡</div>`,
+                `<div class="kanso-shortcut-item"><b>Alt+${fk(userShortcuts.switchPrev)}/${fk(userShortcuts.switchNext)}</b>切对话</div>`,
+                `<div class="kanso-shortcut-item"><b>Alt+${fk(userShortcuts.sysPromptPopup)}</b>系统提示词</div>`,
+                `<div class="kanso-shortcut-item"><b>Alt+1~9</b>切换模型</div>`,
+                `<div class="kanso-shortcut-item"><b>Cmd/Ctrl+K</b>清除上下文</div>`,
+                `<div class="kanso-shortcut-item"><b>Alt+${fk(userShortcuts.newChat)}</b>新建对话</div>`
+            ].join('');
         }
 
         function applyPreferences(theme, fontSize, accent) {
@@ -2172,6 +2315,159 @@
             localStorage.setItem('gemini_accent', c); applyPreferences(currentTheme, currentFont, currentAccent);
         }
 
+        function isAnyOverlayOpen() {
+            if (document.getElementById('preset-name-dialog').classList.contains('active')) return true;
+            if (document.getElementById('search-panel').classList.contains('active')) return true;
+            if (document.getElementById('search-bar').classList.contains('active')) return true;
+            const sm = document.getElementById('settings-modal');
+            if (sm && sm.style.display === 'flex') return true;
+            // 须用内联 display === 'block'：仅用 CSS 隐藏时 style.display 为 ''，!== 'none' 会误判为打开
+            if (dom.contextMenu && dom.contextMenu.style.display === 'block') return true;
+            const sp = document.getElementById('sysprompt-popup');
+            if (sp && sp.style.display === 'block') return true;
+            if (dom.historyPopup && dom.historyPopup.classList.contains('active')) return true;
+            const mdd = document.getElementById('model-dropdown');
+            if (mdd && mdd.style.display !== 'none') return true;
+            return false;
+        }
+
+        function isEditableElement(el) {
+            if (!el) return false;
+            if (el.isContentEditable) return true;
+            const tag = el.tagName;
+            if (tag === 'TEXTAREA') return true;
+            if (tag === 'SELECT') return true;
+            if (tag === 'INPUT') {
+                const t = (el.type || 'text').toLowerCase();
+                if (['button', 'checkbox', 'radio', 'range', 'reset', 'submit', 'file', 'color', 'hidden'].includes(t)) return false;
+                return true;
+            }
+            return false;
+        }
+
+        /** 是否用程序拉回主输入框焦点（用于隐藏光标，不抢「正在编辑」的视觉） */
+        let messageInputAmbientCaret = false;
+        function syncMessageInputAmbientCaret() {
+            if (!dom.input) return;
+            dom.input.classList.toggle('ambient-focus', document.activeElement === dom.input && messageInputAmbientCaret);
+        }
+
+        /** 用户主动点到输入区或开始输入时，取消「环境焦点」隐藏光标 */
+        function clearMessageInputAmbientCaret() {
+            if (!messageInputAmbientCaret) return;
+            messageInputAmbientCaret = false;
+            syncMessageInputAmbientCaret();
+        }
+
+        /** 无浮层时：主输入框失焦后自动拉回焦点（拼音/日语等 IME 需真实焦点，不能用 preventDefault+插字） */
+        function shouldAllowMessageInputBlur(e) {
+            const t = e.relatedTarget;
+            if (!t) return false;
+            if (t === dom.input) return true;
+            if (t.closest && t.closest('#sidebar')) return true;
+            if (t.closest && t.closest('#header')) return true;
+            if (t.closest && t.closest('#settings-modal')) return true;
+            if (t.closest && t.closest('#input-container')) return true;
+            if (t.closest && t.closest('#sysprompt-popup')) return true;
+            if (t.closest && t.closest('#history-popup')) return true;
+            if (t.closest && t.closest('#search-panel')) return true;
+            if (t.closest && t.closest('#search-bar')) return true;
+            if (t.closest && t.closest('#preset-name-dialog')) return true;
+            if (t.closest && t.closest('#context-menu')) return true;
+            if (t.closest && t.closest('#model-dropdown')) return true;
+            if (t.closest && t.closest('#jump-to-bottom-wrap')) return true;
+            if (isEditableElement(t) && t !== dom.input) return true;
+            const tag = t.tagName;
+            if (tag === 'BUTTON' || tag === 'A' || tag === 'SELECT') return true;
+            return false;
+        }
+
+        /**
+         * 在 pointerdown/mousedown 捕获阶段拉回主输入框焦点（早于 keydown），拼音等 IME 才能把首键交给输入法。
+         * 对 Shift+拖拽保留默认行为，便于在气泡里划选文字。
+         */
+        function keepMessageInputFocusOnMainPointer(e) {
+            if (e.pointerType === 'mouse' && e.button !== 0) return;
+            const raw = e.target;
+            const el = raw && raw.nodeType === 1 ? raw : raw && raw.parentElement;
+            if (!el || !el.closest) return;
+            if (isAnyOverlayOpen()) return;
+            if (el.closest('#header')) return;
+            if (el.closest('#input-container')) return;
+            if (el.closest('#jump-to-bottom-wrap')) return;
+            if (el.closest('#search-bar')) return;
+            if (el.closest('a[href], button, input, textarea, select, [contenteditable], .code-block')) return;
+            if (e.shiftKey) return;
+            dom.input.focus({ preventScroll: true });
+            e.preventDefault();
+            messageInputAmbientCaret = true;
+            syncMessageInputAmbientCaret();
+        }
+
+        /** 顶栏空白处（非按钮/弹层）点击：在 keydown 之前聚焦主输入，避免中文 IME 首键错位 */
+        function keepMessageInputFocusOnHeaderPointer(e) {
+            if (e.pointerType === 'mouse' && e.button !== 0) return;
+            const raw = e.target;
+            const el = raw && raw.nodeType === 1 ? raw : raw && raw.parentElement;
+            if (!el || !el.closest) return;
+            const sm = document.getElementById('settings-modal');
+            if (sm && sm.style.display === 'flex') return;
+            if (document.getElementById('search-panel').classList.contains('active')) return;
+            if (el.closest('#sysprompt-popup')) return;
+            if (el.closest('#history-popup')) return;
+            if (el.closest('#model-dropdown')) return;
+            if (el.closest('a[href], button, input, textarea, select, [contenteditable]')) return;
+            if (e.shiftKey) return;
+            clearMessageInputAmbientCaret();
+            dom.input.focus({ preventScroll: true });
+            e.preventDefault();
+        }
+
+        /**
+         * 关闭顶栏浮层后把焦点拉回主输入（须在 keydown 之前完成，不能用 keydown 里 focus 代替）。
+         * @param {boolean} [visibleCaret] 为 true 时不使用 ambient 隐藏光标；顶栏点击后立刻打字时中文 IME 需要可见 caret。
+         */
+        function refocusMessageInputSoft(visibleCaret) {
+            if (!dom.input) return;
+            const sm = document.getElementById('settings-modal');
+            if (sm && sm.style.display === 'flex') return;
+            if (document.getElementById('search-panel').classList.contains('active')) return;
+            if (document.getElementById('search-bar').classList.contains('active')) return;
+            if (document.getElementById('preset-name-dialog').classList.contains('active')) return;
+            if (visibleCaret) {
+                clearMessageInputAmbientCaret();
+                dom.input.focus({ preventScroll: true });
+                return;
+            }
+            messageInputAmbientCaret = true;
+            dom.input.focus({ preventScroll: true });
+            syncMessageInputAmbientCaret();
+        }
+
+        /**
+         * 点击顶栏控件后焦点常留在 button 上。用 setTimeout(0) 排在同次 click 打开弹层之后，
+         * 若仍有顶栏浮层打开则跳过，否则拉回主输入，保证下一键交给 IME。
+         */
+        function scheduleRefocusAfterHeaderPointer() {
+            setTimeout(() => {
+                if (document.getElementById('sysprompt-popup').style.display === 'block') return;
+                if (dom.historyPopup.classList.contains('active')) return;
+                const dd = document.getElementById('model-dropdown');
+                if (dd && dd.style.display === 'block') return;
+                refocusMessageInputSoft(true);
+            }, 0);
+        }
+
+        function tryInitialMessageInputFocus() {
+            if (!dom.input) return;
+            if (isAnyOverlayOpen()) return;
+            const sm = document.getElementById('settings-modal');
+            if (sm && sm.style.display === 'flex') return;
+            messageInputAmbientCaret = true;
+            dom.input.focus({ preventScroll: true });
+            syncMessageInputAmbientCaret();
+        }
+
         let altShortcutFiredAt = 0;
 
         function setupEventListeners() {
@@ -2183,6 +2479,54 @@
                 if (!this.classList.contains('expanded')) { this.style.height = '40px'; this.style.height = (this.scrollHeight) + 'px'; }
                 updateSendBtnState();
             });
+
+            const mainEl = document.getElementById('main');
+            if (mainEl) {
+                mainEl.addEventListener('pointerdown', keepMessageInputFocusOnMainPointer, true);
+            }
+
+            const headerEl = document.getElementById('header');
+            if (headerEl) {
+                headerEl.addEventListener('pointerdown', keepMessageInputFocusOnHeaderPointer, true);
+                headerEl.addEventListener('pointerup', (e) => {
+                    if (e.pointerType === 'mouse' && e.button !== 0) return;
+                    const raw = e.target;
+                    const el = raw && raw.nodeType === 1 ? raw : raw && raw.parentElement;
+                    if (!el || !el.closest) return;
+                    if (el.closest('#sysprompt-popup') || el.closest('#history-popup') || el.closest('#model-dropdown')) return;
+                    scheduleRefocusAfterHeaderPointer();
+                }, true);
+            }
+
+            const inputContainer = document.getElementById('input-container');
+            if (inputContainer) {
+                inputContainer.addEventListener('mousedown', () => { clearMessageInputAmbientCaret(); });
+            }
+            dom.input.addEventListener('compositionstart', () => { clearMessageInputAmbientCaret(); });
+            dom.input.addEventListener('blur', (e) => {
+                if (isAnyOverlayOpen()) return;
+                if (shouldAllowMessageInputBlur(e)) return;
+                setTimeout(() => {
+                    if (document.activeElement === dom.input) return;
+                    if (isAnyOverlayOpen()) return;
+                    messageInputAmbientCaret = true;
+                    dom.input.focus({ preventScroll: true });
+                    syncMessageInputAmbientCaret();
+                }, 0);
+            });
+
+            const syspromptTa = document.getElementById('sysprompt-input');
+            if (syspromptTa) {
+                syspromptTa.addEventListener('keydown', function (e) {
+                    if (e.isComposing) return;
+                    if (e.key !== 'Enter') return;
+                    if (e.shiftKey) return;
+                    e.preventDefault();
+                    const ta = document.getElementById('sysprompt-input');
+                    if (ta) onSysPromptInput(ta.value);
+                    closeSysPromptPopup(true);
+                });
+            }
 
             document.addEventListener('keydown', function (e) {
                 if (e.isComposing) return;
@@ -2219,8 +2563,10 @@
                     if (e.code === userShortcuts.expandInput) {
                         const isExpanded = dom.input.classList.toggle('expanded');
                         if (!isExpanded) collapseInput();
-                        dom.input.focus();
+                        clearMessageInputAmbientCaret();
+                        dom.input.focus({ preventScroll: true });
                     }
+                    if (e.code === userShortcuts.sysPromptPopup) { toggleSysPromptPopup(); }
                     if (e.code.startsWith('Digit')) {
                         const modelIndex = parseInt(e.code.replace('Digit', '')) - 1;
                         if (modelIndex >= 0 && modelIndex < savedModels.length) {
@@ -2234,7 +2580,14 @@
                 }
 
                 if (document.activeElement === dom.input) {
-                    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); handleSendAction(); }
+                    if (e.key === 'Enter') {
+                        if (enterSendMode === 'enter_send') {
+                            if (!e.shiftKey) { e.preventDefault(); handleSendAction(); }
+                        } else if (e.metaKey || e.ctrlKey) {
+                            e.preventDefault();
+                            handleSendAction();
+                        }
+                    }
                 }
 
                 if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
@@ -2247,22 +2600,28 @@
                 // 关闭 context menu（点击 settings-modal 内部也关）
                 dom.contextMenu.style.display = 'none';
                 // 关闭 sysprompt popup
-                if (!e.target.closest('#sysprompt-popup-container')) {
-                    const sp = document.getElementById('sysprompt-popup');
-                    if (sp) { sp.style.display = 'none'; document.getElementById('sysprompt-btn').classList.remove('popup-open'); }
-                }
+                if (!e.target.closest('#sysprompt-popup-container')) closeSysPromptPopup(false);
                 // 关闭 history popup
-                if (!e.target.closest('#history-popup-container')) dom.historyPopup.classList.remove('active');
+                if (!e.target.closest('#history-popup-container') && dom.historyPopup.classList.contains('active')) {
+                    dom.historyPopup.classList.remove('active');
+                    refocusMessageInputSoft();
+                }
                 // 关闭 model dropdown
                 if (!e.target.closest('#model-pill') && !e.target.closest('#model-dropdown')) {
                     const dd = document.getElementById('model-dropdown');
-                    if (dd) dd.style.display = 'none';
+                    if (dd && dd.style.display === 'block') {
+                        dd.style.display = 'none';
+                        refocusMessageInputSoft();
+                    }
                 }
             });
 
             document.addEventListener('scroll', () => {
                 dom.contextMenu.style.display = 'none';
-                dom.historyPopup.classList.remove('active');
+                if (dom.historyPopup.classList.contains('active')) {
+                    dom.historyPopup.classList.remove('active');
+                    refocusMessageInputSoft();
+                }
             }, true);
 
             document.addEventListener('paste', (e) => {
@@ -2327,6 +2686,20 @@
 
         function toggleSidebar() { dom.sidebar.classList.toggle('collapsed'); }
 
+        function closeSysPromptPopup(focusMainInput) {
+            const popup = document.getElementById('sysprompt-popup');
+            const btn = document.getElementById('sysprompt-btn');
+            if (!popup || popup.style.display !== 'block') return;
+            popup.style.display = 'none';
+            if (btn) btn.classList.remove('popup-open');
+            if (focusMainInput && dom.input) {
+                clearMessageInputAmbientCaret();
+                dom.input.focus({ preventScroll: true });
+            } else {
+                refocusMessageInputSoft();
+            }
+        }
+
         function toggleSysPromptPopup(e) {
             if (e) e.stopPropagation();
             const popup = document.getElementById('sysprompt-popup');
@@ -2334,7 +2707,7 @@
             const isOpen = popup.style.display === 'block';
             // 关闭 history popup
             dom.historyPopup.classList.remove('active');
-            if (isOpen) { popup.style.display = 'none'; btn.classList.remove('popup-open'); return; }
+            if (isOpen) { closeSysPromptPopup(false); return; }
 
             const chat = chats.find(c => c.id == currentChatId);
             const activePrompt = chat ? (typeof chat.systemPrompt === 'string' ? chat.systemPrompt : '') : systemPrompt;
@@ -2358,6 +2731,7 @@
             onSysPromptInput('');
             document.getElementById('sysprompt-popup').style.display = 'none';
             document.getElementById('sysprompt-btn').classList.remove('popup-open');
+            refocusMessageInputSoft();
         }
 
         const _sysPromptBtnOrigHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><g transform="scale(-1,1) translate(-24,0)"><path d="M15 4V2"/><path d="M15 16v-2"/><path d="M8 9h2"/><path d="M20 9h2"/><path d="M17.8 11.8 19 13"/><path d="M15 9h.01"/><path d="M17.8 6.2 19 5"/><path d="m3 21 9-9"/><path d="M12.2 6.2 11 5"/></g></svg>';
@@ -2418,11 +2792,12 @@
         }
 
         function saveData() {
+            const jsonReplacer = (k, v) => (k === '_queueSolidify' ? undefined : v);
             try {
-                localStorage.setItem('gemini_chats', JSON.stringify(chats));
+                localStorage.setItem('gemini_chats', JSON.stringify(chats, jsonReplacer));
             } catch (e) {
                 const slim = chats.map(c => ({ ...c, history: c.history.map(m => m._imgs && m._imgs.length ? { role: m.role, parts: m.parts } : m) }));
-                try { localStorage.setItem('gemini_chats', JSON.stringify(slim)); } catch(e2) {}
+                try { localStorage.setItem('gemini_chats', JSON.stringify(slim, jsonReplacer)); } catch(e2) {}
             }
             localStorage.setItem('gemini_current_chat_id', currentChatId);
         }
@@ -2444,7 +2819,9 @@
             localStorage.setItem('gemini_draft_system_prompt', '');
             syncSelectUIs(); renderSidebar(); renderChatArea(); updateInputUI();
             setTimeout(updateSysPromptBtn, 0);
-            dom.sidebar.classList.remove('collapsed'); dom.input.focus();
+            dom.sidebar.classList.remove('collapsed');
+            clearMessageInputAmbientCaret();
+            dom.input.focus({ preventScroll: true });
         }
 
         function switchChat(id) {
@@ -2455,6 +2832,8 @@
             setTimeout(updateSysPromptBtn, 0);
             saveData(); syncSelectUIs(); renderSidebar(); renderChatArea(); updateInputUI();
             if (sessionScrollPositions[id] !== undefined) dom.chatArea.scrollTo({ top: sessionScrollPositions[id], behavior: 'instant' });
+            clearMessageInputAmbientCaret();
+            dom.input.focus({ preventScroll: true });
         }
 
         function deleteChat(id) {
@@ -2574,12 +2953,7 @@
                             <h2 style="font-weight: 500; font-size: 30px; letter-spacing: 1px; color: var(--text-main); margin: 0;">${animatedText}</h2>
                             ${hasApiKey
                                 ? `<div class="kanso-shortcut-pack">
-                                    <div class="kanso-shortcut-item"><b>Cmd+↵</b>发送</div>
-                                    <div class="kanso-shortcut-item"><b>Cmd+F</b>搜索</div>
-                                    <div class="kanso-shortcut-item"><b>Cmd+K</b>清除</div>
-                                    <div class="kanso-shortcut-item"><b>Alt+←/→</b>切对话</div>
-                                    <div class="kanso-shortcut-item"><b>Alt+↑/↓</b>跳气泡</div>
-                                    <div class="kanso-shortcut-item"><b>Alt+1~9</b>切模型</div>
+                                    ${getWelcomeShortcutPackItemsHtml()}
                                 </div>`
                                 : `<div class="kanso-shortcut-pack" style="opacity:1; margin-top:20px;">
                                     <button class="no-key-btn" onclick="switchTab('tab-system'); openSettings();">
@@ -2599,11 +2973,11 @@
                 else if (msg.role === 'loading') {
                     let tokenHtml = '';
                     if (showTokenEstimate && msg.tokens > 0) tokenHtml = `<span style="font-size: 11px; color: var(--text-muted); opacity: 0.5; margin-left: 8px; font-weight: normal;">(预估携带: ~${msg.tokens} Tokens)</span>`;
-                    appendMessageHTML(`<span class="loading-pulse">思考中...</span> <span class="time-badge loading-time" data-start="${msg.startTime}">0.0 秒</span> ${tokenHtml}`, 'bot', msg.id, -1, false, true);
+                    appendMessageHTML(`<span class="thinking-inline-wrap"><span class="thinking-loading">思考中<span class="thinking-dots" aria-hidden="true">.</span></span><span class="time-badge loading-time" data-start="${msg.startTime}">0.0 秒</span></span> ${tokenHtml}`, 'bot', msg.id, -1, false, true);
                 } else {
                     const role = msg.role === 'user' ? 'user' : 'bot';
                     const txt = getTextFromParts(msg.parts);
-                    appendMessageHTML(txt, role, '', index, false);
+                    appendMessageHTML(txt, role, '', index, false, false, false, !!msg._queueSolidify);
                     if (role === 'user' && msg._imgs && msg._imgs.length) {
                         const lastRow = dom.chatArea.lastElementChild;
                         const msgDiv = lastRow && lastRow.querySelector('.message');
@@ -2643,9 +3017,10 @@
             requestAnimationFrame(() => updateJumpToBottomBtn());
         }
 
-        function appendMessageHTML(text, role, id = '', index = -1, autoScroll = true, isRawHTML = false, isQueued = false) {
+        function appendMessageHTML(text, role, id = '', index = -1, autoScroll = true, isRawHTML = false, isQueued = false, queueSolidify = false) {
             const rowDiv = document.createElement('div'); rowDiv.className = `message-row ${role}`; if (id) rowDiv.id = id;
             if (isQueued) rowDiv.classList.add('queued');
+            if (queueSolidify && role === 'user') rowDiv.classList.add('queue-solidify');
             const msgDiv = document.createElement('div'); msgDiv.className = `message ${role}`;
             if (role === 'bot') { msgDiv.innerHTML = isRawHTML ? text : markdownToSafeHTML(text); }
             else {
@@ -2663,12 +3038,26 @@
                     menuItems.push({ label: '📋 复制代码', action: () => triggerCopy(t, null, codeBlock) });
                 } else {
                     menuItems.push({ label: '📋 复制', action: () => navigator.clipboard.writeText(isRawHTML ? msgDiv.innerText : text) });
-                    if (role === 'user' && index > -1) menuItems.push({ label: '✏️ 新建分支并编辑', action: () => { branchChat(index - 1); dom.input.value = text; dom.input.style.height = '40px'; dom.input.style.height = dom.input.scrollHeight + 'px'; dom.input.focus(); } });
+                    if (role === 'user' && index > -1) menuItems.push({ label: '✏️ 新建分支并编辑', action: () => { branchChat(index - 1); dom.input.value = text; dom.input.style.height = '40px'; dom.input.style.height = dom.input.scrollHeight + 'px'; clearMessageInputAmbientCaret(); dom.input.focus({ preventScroll: true }); } });
                     if (role !== 'user' && index > -1) menuItems.push({ label: '🌿 从此处新建分支', action: () => branchChat(index) });
                 }
                 showContextMenu(e.clientX, e.clientY, menuItems);
             };
             rowDiv.appendChild(msgDiv); dom.chatArea.appendChild(rowDiv);
+            if (queueSolidify && role === 'user' && index >= 0) {
+                const histIdx = index;
+                const onSolidifyEnd = (e) => {
+                    if (e.animationName !== 'queue-solidify-in') return;
+                    msgDiv.removeEventListener('animationend', onSolidifyEnd);
+                    rowDiv.classList.remove('queue-solidify');
+                    const chat = chats.find(c => c.id === currentChatId);
+                    if (chat && chat.history[histIdx] && chat.history[histIdx]._queueSolidify) {
+                        delete chat.history[histIdx]._queueSolidify;
+                        saveData();
+                    }
+                };
+                msgDiv.addEventListener('animationend', onSolidifyEnd);
+            }
             if (autoScroll) { requestAnimationFrame(() => { dom.chatArea.scrollTop = dom.chatArea.scrollHeight; scrollToBottom(); }); }
         }
 
@@ -2732,7 +3121,7 @@
             e.stopPropagation();
             const dd = document.getElementById('model-dropdown');
             const isOpen = dd.style.display === 'block';
-            if (isOpen) { dd.style.display = 'none'; return; }
+            if (isOpen) { dd.style.display = 'none'; refocusMessageInputSoft(); return; }
             dd.innerHTML = '';
             const cur = getCurrentModel();
             savedModels.forEach(m => {
@@ -2742,7 +3131,7 @@
                 item.innerHTML = '<span style="font-weight:' + (active ? '600' : '400') + ';">' + getModelAlias(m) + '</span><span style="font-size:11px;color:var(--text-muted);font-family:monospace;">' + m + '</span>';
                 item.onmouseenter = () => { item.style.background = 'var(--bg-sidebar-hover)'; };
                 item.onmouseleave = () => { item.style.background = active ? 'var(--bg-sidebar-active)' : 'transparent'; };
-                item.onclick = () => { dom.modelSelect.value = m; let chat = chats.find(c => c.id == currentChatId); if (chat) { chat.model = m; saveData(); } updateModelPill(m); dd.style.display = 'none'; };
+                item.onclick = () => { dom.modelSelect.value = m; let chat = chats.find(c => c.id == currentChatId); if (chat) { chat.model = m; saveData(); } updateModelPill(m); dd.style.display = 'none'; refocusMessageInputSoft(); };
                 dd.appendChild(item);
             });
             dd.style.display = 'block';
@@ -2770,8 +3159,13 @@
             }
             if (!targetChat.queue) targetChat.queue = [];
             if (abortControllers[targetChat.id]) {
-                if (!queueEnabled) { dom.input.value = text; return alert('当前对话正在思考中，请等待完毕或在设置中开启「提问排队」。'); }
-                if (targetChat.queue.length >= queueMax) { dom.input.value = text; return alert(`抱歉，队列已满 (最多 ${queueMax} 条)，请等待当前生成完毕。`); }
+                if (!queueEnabled || targetChat.queue.length >= queueMax) {
+                    dom.input.value = text;
+                    dom.input.style.height = '40px';
+                    if (dom.input.value) dom.input.style.height = dom.input.scrollHeight + 'px';
+                    updateSendBtnState();
+                    return;
+                }
                 const qImgs = pendingImgs.splice(0); renderPendingImgs();
                 targetChat.queue.push({ text: text, model: model, imgs: qImgs });
                 saveData(); if (currentChatId === targetChat.id) renderChatArea(); return;
@@ -2781,12 +3175,14 @@
             executeApiRequest(targetChat, text, model, apiKey, imgs, wasNearBottomBeforeSend);
         }
 
-        async function executeApiRequest(targetChat, text, model, apiKey, imgs, wasNearBottomHint = null) {
+        async function executeApiRequest(targetChat, text, model, apiKey, imgs, wasNearBottomHint = null, fromQueue = false) {
             const isCurrentChat = currentChatId === targetChat.id;
             const wasNearBottom = isCurrentChat ? (wasNearBottomHint === true || isNearChatBottom(140)) : false;
 
             if (targetChat.history.length === 0) { targetChat.title = text.substring(0, 15) + (text.length > 15 ? '...' : ''); renderSidebar(); }
-            targetChat.history.push({ role: "user", parts: [{ text: text }], _imgs: (imgs || []) });
+            const userEntry = { role: "user", parts: [{ text: text }], _imgs: (imgs || []) };
+            if (fromQueue) userEntry._queueSolidify = true;
+            targetChat.history.push(userEntry);
 
             let startIndex = 0;
             for (let i = targetChat.history.length - 1; i >= 0; i--) { if (targetChat.history[i].role === 'divider') { startIndex = i + 1; break; } }
@@ -2855,7 +3251,17 @@
 
             try {
                 const response = await fetch(requestUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(requestBody), signal: abortControllers[targetChat.id].signal });
-                if (!response.ok) { const data = await response.json(); throw new Error(data.error.message || '请求失败'); }
+                if (!response.ok) {
+                    const raw = await response.text();
+                    let errMsg = '请求失败';
+                    try {
+                        const errData = JSON.parse(raw);
+                        errMsg = (errData.error && errData.error.message) ? errData.error.message : errMsg;
+                    } catch (_) {
+                        if (raw && raw.length < 500) errMsg = raw;
+                    }
+                    throw new Error(errMsg);
+                }
 
                 let finalReplyText = "";
                 const loadingIdx = targetChat.history.indexOf(loadingObj);
@@ -2922,18 +3328,19 @@
                 if (error.name === 'AbortError') {
                     if (loadingIdx > -1) {
                         const baseText = document.getElementById(loadingId) ? document.getElementById(loadingId).innerText : "";
-                        const canceledText = baseText && !baseText.includes("思考中...") ? baseText + "\n\n*(用户已手动中止生成)*" : "*(用户已手动中止生成)*";
+                        const canceledText = baseText && !baseText.includes("思考中") ? baseText + "\n\n*(用户已手动中止生成)*" : "*(用户已手动中止生成)*";
                         targetChat.history[loadingIdx] = { role: "model", parts: [{ text: canceledText }] };
                     }
                     saveData();
                 } else {
                     if (loadingIdx > -1) targetChat.history.splice(loadingIdx, 1);
-                    targetChat.history.push({ role: "model", parts: [{ text: '❌ 请求失败: ' + error.message }] }); targetChat.history.pop(); saveData();
+                    targetChat.history.push({ role: "model", parts: [{ text: '❌ 请求失败: ' + error.message }] });
+                    saveData();
                 }
             } finally {
                 if (targetChat.queue && targetChat.queue.length > 0) {
                     const nextRequest = targetChat.queue.shift(); saveData();
-                    executeApiRequest(targetChat, nextRequest.text, nextRequest.model, apiKey, nextRequest.imgs || []);
+                    executeApiRequest(targetChat, nextRequest.text, nextRequest.model, apiKey, nextRequest.imgs || [], undefined, true);
                 } else {
                     delete abortControllers[targetChat.id];
                     if (currentChatId !== targetChat.id) unreadCompletedChats.add(targetChat.id);
@@ -2943,7 +3350,9 @@
                             forceSnapToBottomAfterRender = true;
                             showJumpToBottomHint = false;
                         }
-                        renderChatArea(); updateInputUI(); dom.input.focus();
+                        renderChatArea(); updateInputUI();
+                        clearMessageInputAmbientCaret();
+                        dom.input.focus({ preventScroll: true });
                     }
                     renderSidebar();
                 }
