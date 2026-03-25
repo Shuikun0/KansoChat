@@ -7,6 +7,7 @@
     <title>KansoChat</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💬</text></svg>">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js"></script>
     <style>
         :root {
             --bg-main: #ffffff;
@@ -142,7 +143,37 @@
         #chat-area {
             position: absolute; inset: 0; overflow-y: auto;
             padding: calc(var(--header-height) + 20px) 20px calc(var(--input-height) + 20px);
-            display: flex; flex-direction: column; gap: 20px; scroll-behavior: smooth;
+            display: flex; flex-direction: column; gap: 20px; scroll-behavior: auto;
+        }
+
+        #jump-to-bottom-wrap {
+            position: absolute;
+            right: 20px;
+            bottom: calc(var(--input-height) + 12px);
+            display: none;
+            z-index: 1200;
+            pointer-events: auto;
+        }
+
+        #jump-to-bottom-btn {
+            pointer-events: auto;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--bg-main);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            border-radius: 999px;
+            padding: 9px 14px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 700;
+            box-shadow: 0 12px 30px rgba(0,0,0,0.14);
+            transition: background-color 0.15s;
+        }
+
+        #jump-to-bottom-btn:hover {
+            background: var(--bg-sidebar-hover);
         }
 
         #input-container {
@@ -218,6 +249,10 @@
         .code-block pre { margin: 0; padding: 12px; overflow-x: auto; color: var(--code-text); font-family: monospace; font-size: 0.9em; background: transparent; cursor: pointer; }
         .code-block pre code { background-color: transparent; padding: 0; }
         .code-preview, .code-full-view { display: flex; flex-direction: column; }
+        /* Code folding state is controlled by class to avoid being affected by sanitization. */
+        .code-block.collapsed .code-full-view { display: none; }
+        .code-block.collapsed .code-preview { display: flex; }
+        .code-block:not(.collapsed) .code-preview { display: none; }
         .code-preview pre { padding: 8px 12px; margin: 0; }
         .code-fold-btn { background: rgba(128, 128, 128, 0.1); text-align: center; font-size: 12px; color: var(--text-muted); cursor: pointer; padding: 6px; border-top: 1px dashed var(--border-color); border-bottom: 1px dashed var(--border-color); transition: 0.2s; user-select: none; font-family: monospace; }
         .code-fold-btn:hover { background: rgba(128, 128, 128, 0.2); color: var(--text-main); }
@@ -686,6 +721,13 @@
 
             <div id="chat-area"></div>
 
+            <div id="jump-to-bottom-wrap" aria-hidden="true">
+                <button id="jump-to-bottom-btn" type="button" onclick="jumpToBottomNow()" title="跳到底部">
+                    <span style="font-size: 16px; line-height: 1;">↓</span>
+                    到底部
+                </button>
+            </div>
+
             <input type="file" id="img-file-input" accept="image/*" multiple style="display:none" onchange="handleImgFiles(this.files)">
             <div id="input-container">
                 <div class="input-box-wrapper">
@@ -829,6 +871,19 @@
                             <span id="queue-display" class="font-val">5 条</span>
                         </div>
                     </div>
+
+                    <div class="setting-block" style="margin-top: 15px;">
+                        <label style="display:flex; flex-direction: column; gap: 4px;">
+                            自动下拉到底部（发送/接收）
+                            <span style="font-size: 12px; color: var(--text-muted); font-weight: normal; line-height: 1.4;">
+                                关闭后：消息更新时不会自动滚动，只在底部显示「到底部」按钮
+                            </span>
+                        </label>
+                        <div class="segment-group" style="margin-bottom: 10px;">
+                            <button class="segment-btn active" data-autoscroll-val="true" onclick="setAutoScrollBottom(true)">开启</button>
+                            <button class="segment-btn" data-autoscroll-val="false" onclick="setAutoScrollBottom(false)">关闭</button>
+                        </div>
+                    </div>
                 </div>
 
                 <div id="tab-models" class="settings-pane">
@@ -928,7 +983,16 @@
         let sessionScrollPositions = {};
 
         let isSearchEnabled = true;
-        let globalSystemPrompt = localStorage.getItem('gemini_system_prompt') || '';
+        // 仅「尚未选中任何对话 / 未发送首条消息」时的草稿；每条会话的系统提示词只存在 chat.systemPrompt
+        let systemPrompt = (() => {
+            let d = localStorage.getItem('gemini_draft_system_prompt');
+            if (d === null) {
+                d = localStorage.getItem('gemini_system_prompt') || '';
+                localStorage.setItem('gemini_draft_system_prompt', d);
+                localStorage.removeItem('gemini_system_prompt');
+            }
+            return d;
+        })();
         let currentTheme = 'auto', currentFont = '15px', currentAccent = '#10a37f';
         let codeDefaultCollapse = localStorage.getItem('gemini_code_collapse') !== 'false';
 
@@ -936,8 +1000,10 @@
         let queueMax = parseInt(localStorage.getItem('gemini_queue_max') || '5');
 
         let historyLimit = localStorage.getItem('gemini_history_limit') ? parseInt(localStorage.getItem('gemini_history_limit')) : 999;
-        let systemPrompt = localStorage.getItem('gemini_system_prompt') || '';
         let showTokenEstimate = localStorage.getItem('gemini_show_token_est') !== 'false';
+        let autoScrollBottom = localStorage.getItem('gemini_auto_scroll_bottom') !== 'false';
+        let showJumpToBottomHint = false;
+        let forceSnapToBottomAfterRender = false;
 
         const historySteps = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 30, 999];
 
@@ -1335,25 +1401,47 @@
                     const topLines = lines.slice(0, 6).join('\n');
                     const bottomLines = lines.slice(-6).join('\n');
                     const hiddenCount = lines.length - 12;
-                    return `<div class="code-block" title="单击 极速复制"><div class="code-header"><span>${lang}</span><button class="copy-btn" onclick="copyCode(this)">复制</button></div><div class="code-preview"><pre><code>${topLines}</code></pre><div class="code-fold-btn" onclick="toggleCodeFold(this)">... 展开中间 ${hiddenCount} 行代码 ...</div><pre><code>${bottomLines}</code></pre></div><div class="code-full-view" style="display:none;"><pre><code>${escapedCode}</code></pre><div class="code-fold-btn code-fold-btn-bottom" onclick="toggleCodeFold(this)">收起代码片段</div></div></div>`;
+                    return `<div class="code-block collapsed" title="单击 极速复制"><div class="code-header"><span>${lang}</span><button class="copy-btn" type="button">复制</button></div><div class="code-preview"><pre><code>${topLines}</code></pre><div class="code-fold-btn">... 展开中间 ${hiddenCount} 行代码 ...</div><pre><code>${bottomLines}</code></pre></div><div class="code-full-view"><pre><code>${escapedCode}</code></pre><div class="code-fold-btn code-fold-btn-bottom">收起代码片段</div></div></div>`;
                 } else {
-                    return `<div class="code-block" title="单击 极速复制"><div class="code-header"><span>${lang}</span><button class="copy-btn" onclick="copyCode(this)">复制</button></div><pre><code>${escapedCode}</code></pre></div>`;
+                    return `<div class="code-block" title="单击 极速复制"><div class="code-header"><span>${lang}</span><button class="copy-btn" type="button">复制</button></div><pre><code>${escapedCode}</code></pre></div>`;
                 }
             }
         };
         marked.use({ renderer });
 
+        // Extract all text parts from Gemini response/history parts.
+        function getTextFromParts(parts) {
+            if (!parts || !Array.isArray(parts)) return '';
+            return parts
+                .map(p => {
+                    if (!p) return '';
+                    if (typeof p === 'string') return p;
+                    if (typeof p.text === 'string') return p.text;
+                    return '';
+                })
+                .filter(Boolean)
+                .join('');
+        }
+
+        function markdownToSafeHTML(markdown) {
+            const html = marked.parse(markdown);
+            if (typeof DOMPurify !== 'undefined') {
+                return DOMPurify.sanitize(html, {
+                    USE_PROFILES: { html: true },
+                    ADD_ATTR: ['target']
+                });
+            }
+            return html;
+        }
+
         window.toggleCodeFold = function (btn) {
-            if (window.event) window.event.stopPropagation();
             const block = btn.closest('.code-block');
-            const preview = block.querySelector('.code-preview');
-            const fullView = block.querySelector('.code-full-view');
-            if (preview.style.display === 'none') { preview.style.display = 'flex'; fullView.style.display = 'none'; }
-            else { preview.style.display = 'none'; fullView.style.display = 'flex'; }
+            if (!block) return;
+            // Use class-based toggle so sanitization can't break initial/interactive state.
+            block.classList.toggle('collapsed');
         };
 
         function copyCode(btn) {
-            if (window.event) window.event.stopPropagation();
             let codeText = "";
             const block = btn.closest('.code-block');
             const fullView = block.querySelector('.code-full-view');
@@ -1365,7 +1453,19 @@
         function triggerCopy(text, btnElement, blockElement) {
             navigator.clipboard.writeText(text).then(() => {
                 if (blockElement) { blockElement.classList.add('copy-feedback'); setTimeout(() => blockElement.classList.remove('copy-feedback'), 150); }
-                if (btnElement) { const originalText = btnElement.innerText; btnElement.innerText = '已复制 ✔'; setTimeout(() => btnElement.innerText = originalText, 2000); }
+                if (btnElement) {
+                    const originalText = btnElement.innerText;
+                    const originalColor = btnElement.style.color;
+                    btnElement.innerText = '已复制 ✔';
+                    // Make the "copied" feedback use the accent/emphasis color.
+                    btnElement.style.color = 'var(--msg-user)';
+                    btnElement.style.fontWeight = '800';
+                    setTimeout(() => {
+                        btnElement.innerText = originalText;
+                        btnElement.style.color = originalColor;
+                        btnElement.style.fontWeight = '';
+                    }, 2000);
+                }
             }).catch(err => alert("复制失败: " + err));
         }
 
@@ -1391,6 +1491,42 @@
         function scrollToBottom() {
             clearTimeout(scrollTimeout);
             scrollTimeout = setTimeout(() => { if (dom.chatArea) dom.chatArea.scrollTop = dom.chatArea.scrollHeight; }, 30);
+        }
+
+        function isNearChatBottom(threshold = 80) {
+            if (!dom.chatArea) return true;
+            return (dom.chatArea.scrollHeight - dom.chatArea.scrollTop - dom.chatArea.clientHeight) <= threshold;
+        }
+
+        function updateJumpToBottomBtn() {
+            const wrap = document.getElementById('jump-to-bottom-wrap');
+            if (!wrap) return;
+            if (autoScrollBottom) {
+                wrap.style.display = 'none';
+                wrap.setAttribute('aria-hidden', 'true');
+                return;
+            }
+            const chat = currentChatId ? chats.find(c => c.id === currentChatId) : null;
+            if (!chat || !chat.history || chat.history.length === 0) {
+                wrap.style.display = 'none';
+                wrap.setAttribute('aria-hidden', 'true');
+                return;
+            }
+            if (!showJumpToBottomHint) {
+                wrap.style.display = 'none';
+                wrap.setAttribute('aria-hidden', 'true');
+                return;
+            }
+            wrap.style.display = 'block';
+            wrap.setAttribute('aria-hidden', 'false');
+        }
+
+        function jumpToBottomNow() {
+            if (!dom.chatArea) return;
+            dom.chatArea.scrollTop = dom.chatArea.scrollHeight;
+            if (currentChatId) sessionScrollPositions[currentChatId] = dom.chatArea.scrollTop;
+            showJumpToBottomHint = false;
+            updateJumpToBottomBtn();
         }
 
         // ── 搜索功能 ──────────────────────────────────────────────
@@ -1437,7 +1573,10 @@
                     }
                     frag.appendChild(document.createTextNode(node.textContent.slice(last)));
                     node.parentNode.replaceChild(frag, node);
-                } else if (node.nodeType === 1 && !['SCRIPT','STYLE','MARK'].includes(node.tagName)) {
+                } else if (node.nodeType === 1) {
+                    // Skip code blocks and common "code-ish" containers to avoid broken visuals.
+                    if (node.closest && node.closest('.code-block')) return;
+                    if (['SCRIPT', 'STYLE', 'MARK', 'PRE', 'CODE', 'A', 'IMG', 'BUTTON', 'TEXTAREA', 'INPUT', 'SELECT'].includes(node.tagName)) return;
                     Array.from(node.childNodes).forEach(c => walk(c, regex));
                 }
             }
@@ -1502,7 +1641,7 @@
             chats.forEach(chat => {
                 chat.history.forEach((msg, msgIndex) => {
                     if (msg.role !== 'user' && msg.role !== 'model') return;
-                    const text = msg.parts && msg.parts[0] ? msg.parts[0].text : '';
+                    const text = getTextFromParts(msg.parts);
                     if (!text.toLowerCase().includes(keyword.toLowerCase())) return;
                     const { snippet, matchStart, matchEnd } = getSnippet(text, keyword);
                     searchResultsList.push({ chatId: chat.id, chatTitle: chat.title, msgIndex, role: msg.role, snippet, matchStart, matchEnd, fullText: text });
@@ -1614,7 +1753,9 @@
                     }
                     frag.appendChild(document.createTextNode(n.textContent.slice(last)));
                     n.parentNode.replaceChild(frag, n);
-                } else if (n.nodeType === 1 && !['SCRIPT','STYLE','MARK'].includes(n.tagName)) {
+                } else if (n.nodeType === 1) {
+                    if (n.closest && n.closest('.code-block')) return;
+                    if (['SCRIPT', 'STYLE', 'MARK', 'PRE', 'CODE', 'A', 'IMG', 'BUTTON', 'TEXTAREA', 'INPUT', 'SELECT'].includes(n.tagName)) return;
                     Array.from(n.childNodes).forEach(child => walk(child, regex));
                 }
             }
@@ -1624,7 +1765,12 @@
 
         function init() {
             localStorage.removeItem('gemini_default_preset_id');
-            chats.forEach(c => { if (!c.queue) c.queue = []; });
+            let needSaveChats = false;
+            chats.forEach(c => {
+                if (!c.queue) c.queue = [];
+                if (typeof c.systemPrompt !== 'string') { c.systemPrompt = ''; needSaveChats = true; }
+            });
+            if (needSaveChats) saveData();
             dom.apiKey.value = localStorage.getItem('gemini_api_key') || '';
             dom.apiKey.addEventListener('input', () => localStorage.setItem('gemini_api_key', dom.apiKey.value));
             renderSettingsModels(); renderShortcutsUI();
@@ -1832,7 +1978,7 @@
                 const delBtn = document.createElement('button');
                 delBtn.className = 'del-btn'; delBtn.title = '删除';
                 delBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
-                delBtn.onclick = (function(model){ return function(e){ confirmDeleteModel(model, e); }; })(m);
+                delBtn.onclick = (function(model){ return function(e){ e.stopPropagation(); confirmDeleteModel(model, e); }; })(m);
                 actions.appendChild(aliasBtn); actions.appendChild(streamToggle); actions.appendChild(delBtn);
                 div.appendChild(nameSpan); div.appendChild(actions); list.appendChild(div);
             });
@@ -1895,6 +2041,19 @@
             dom.queueRow.style.opacity = val ? '1' : '0.4'; dom.queueRow.style.pointerEvents = val ? 'auto' : 'none';
         }
 
+        function setAutoScrollBottom(val) {
+            autoScrollBottom = val;
+            localStorage.setItem('gemini_auto_scroll_bottom', val);
+            document.querySelectorAll('button[data-autoscroll-val]').forEach(b => b.classList.remove('active'));
+            document.querySelector(`button[data-autoscroll-val="${val}"]`)?.classList.add('active');
+            if (currentChatId) {
+                if (autoScrollBottom) delete sessionScrollPositions[currentChatId];
+                else sessionScrollPositions[currentChatId] = dom.chatArea.scrollTop;
+            }
+            if (autoScrollBottom) showJumpToBottomHint = false;
+            updateJumpToBottomBtn();
+        }
+
         function toggleHistoryPopup(e) {
             if (e) e.stopPropagation();
             // 关闭 sysprompt popup
@@ -1937,6 +2096,10 @@
             dom.fontSlider.value = parseInt(currentFont.replace('px', '')); dom.fontDisplay.innerText = currentFont;
             document.querySelectorAll('.color-dot').forEach(d => { d.classList.toggle('active', d.dataset.color === currentAccent); });
             applyPreferences(currentTheme, currentFont, currentAccent);
+
+            document.querySelectorAll('button[data-autoscroll-val]').forEach(b => b.classList.remove('active'));
+            document.querySelector(`button[data-autoscroll-val="${autoScrollBottom}"]`)?.classList.add('active');
+            updateJumpToBottomBtn();
         }
 
         function applyPreferences(theme, fontSize, accent) {
@@ -1953,11 +2116,10 @@
             localStorage.setItem('gemini_theme', t); applyPreferences(currentTheme, currentFont, currentAccent);
         }
 
-        // 废弃旧的 saveSystemPrompt，改为通用的 onSysPromptInput
         function onSysPromptInput(val) {
             const chat = chats.find(c => c.id == currentChatId);
             if (chat) { chat.systemPrompt = val; saveData(); }
-            if (!chat) { globalSystemPrompt = val; localStorage.setItem('gemini_system_prompt', val); }
+            else { systemPrompt = val; localStorage.setItem('gemini_draft_system_prompt', val); }
             const clearBtn = document.getElementById('sp-clear-btn');
             if (clearBtn) clearBtn.style.visibility = val.trim() ? 'visible' : 'hidden';
             updateSysPromptBtn();
@@ -2125,15 +2287,38 @@
                 ]);
             });
 
+            dom.chatArea.addEventListener('scroll', () => {
+                if (!autoScrollBottom && currentChatId) sessionScrollPositions[currentChatId] = dom.chatArea.scrollTop;
+                if (!autoScrollBottom && isNearChatBottom(80)) showJumpToBottomHint = false;
+                updateJumpToBottomBtn();
+            }, { passive: true });
+
             dom.chatArea.addEventListener('click', (e) => {
+                // Code block controls (fold/copy) are generated from markdown; use delegation
+                // so DOMPurify can strip inline event handlers safely.
+                const foldBtn = e.target.closest('.code-fold-btn');
+                if (foldBtn) { e.stopPropagation(); window.toggleCodeFold(foldBtn); return; }
+
+                const copyBtn = e.target.closest('.copy-btn');
+                if (copyBtn) { e.stopPropagation(); copyCode(copyBtn); return; }
+
                 const preOrCode = e.target.tagName === 'PRE' || e.target.tagName === 'CODE';
                 if (preOrCode && !e.target.closest('.code-header') && !e.target.closest('.code-fold-btn')) {
                     const codeBlock = e.target.closest('.code-block');
                     if (codeBlock) {
+                        // If user is selecting text in the code block, don't auto-copy.
+                        // (Otherwise we clear the selection and trigger clipboard overwrite.)
+                        if (e.detail && e.detail > 1) return; // ignore double-click to allow word selection
+                        const sel = window.getSelection ? window.getSelection() : null;
+                        const selectedText = sel ? sel.toString() : '';
+                        if (selectedText && selectedText.trim()) {
+                            if (!sel.anchorNode || codeBlock.contains(sel.anchorNode)) return;
+                        }
+
                         const copyBtn = codeBlock.querySelector('.copy-btn');
                         const fullView = codeBlock.querySelector('.code-full-view');
                         const textToCopy = fullView ? fullView.querySelector('code').innerText : codeBlock.querySelector('pre code').innerText;
-                        window.getSelection().removeAllRanges();
+                        if (window.getSelection) window.getSelection().removeAllRanges();
                         triggerCopy(textToCopy, copyBtn, codeBlock);
                     }
                 }
@@ -2152,8 +2337,7 @@
             if (isOpen) { popup.style.display = 'none'; btn.classList.remove('popup-open'); return; }
 
             const chat = chats.find(c => c.id == currentChatId);
-            const chatPrompt = chat && chat.systemPrompt != null ? chat.systemPrompt : null;
-            const activePrompt = chatPrompt !== null ? chatPrompt : globalSystemPrompt;
+            const activePrompt = chat ? (typeof chat.systemPrompt === 'string' ? chat.systemPrompt : '') : systemPrompt;
             const ta = document.getElementById('sysprompt-input');
             ta.value = activePrompt;
 
@@ -2166,11 +2350,6 @@
             popup.style.display = 'block';
             btn.classList.add('popup-open');
             ta.focus();
-        }
-
-        function saveSysPrompt(val) {
-            // 兼容旧调用，转发到新函数
-            onSysPromptInput(val);
         }
 
         function clearSysPrompt() {
@@ -2186,8 +2365,7 @@
         function updateSysPromptBtn() {
             const btn = document.getElementById('sysprompt-btn'); if (!btn) return;
             const chat = chats.find(c => c.id == currentChatId);
-            const chatPrompt = chat && chat.systemPrompt != null ? chat.systemPrompt : null;
-            const effectivePrompt = chatPrompt !== null ? chatPrompt : globalSystemPrompt;
+            const effectivePrompt = chat ? (typeof chat.systemPrompt === 'string' ? chat.systemPrompt : '') : systemPrompt;
             btn.classList.toggle('has-prompt', !!effectivePrompt);
             // 找匹配的 preset emoji
             const matched = effectivePrompt ? promptPresets.find(p => p.content === effectivePrompt) : null;
@@ -2261,9 +2439,9 @@
         function createNewChat() {
             collapseInput();
             currentChatId = null;
-            globalSystemPrompt = '';
+            showJumpToBottomHint = false;
             systemPrompt = '';
-            localStorage.setItem('gemini_system_prompt', '');
+            localStorage.setItem('gemini_draft_system_prompt', '');
             syncSelectUIs(); renderSidebar(); renderChatArea(); updateInputUI();
             setTimeout(updateSysPromptBtn, 0);
             dom.sidebar.classList.remove('collapsed'); dom.input.focus();
@@ -2272,6 +2450,7 @@
         function switchChat(id) {
             if (currentChatId) sessionScrollPositions[currentChatId] = dom.chatArea.scrollTop;
             currentChatId = id;
+            showJumpToBottomHint = false;
             collapseInput(); unreadCompletedChats.delete(id);
             setTimeout(updateSysPromptBtn, 0);
             saveData(); syncSelectUIs(); renderSidebar(); renderChatArea(); updateInputUI();
@@ -2285,7 +2464,7 @@
             if (currentChatId == id) currentChatId = chats.length > 0 ? chats[0].id : null;
             saveData();
             if (chats.length === 0) createNewChat();
-            else { syncSelectUIs(); renderSidebar(); renderChatArea(); updateInputUI(); }
+            else { syncSelectUIs(); renderSidebar(); renderChatArea(); updateInputUI(); setTimeout(updateSysPromptBtn, 0); }
         }
 
         function branchChat(messageIndex) {
@@ -2296,8 +2475,16 @@
             const match = oldTitle.match(/^分支(\d*)\s+(.*)$/);
             if (match) { let num = match[1] === "" ? 2 : parseInt(match[1]) + 1; newTitle = `分支${num} ${match[2]}`; }
             else newTitle = `分支 ${oldTitle}`;
-            const newChat = { id: Date.now(), title: newTitle, model: currentChat.model, history: JSON.parse(JSON.stringify(currentChat.history.slice(0, messageIndex + 1))), queue: [] };
+            const newChat = {
+                id: Date.now(),
+                title: newTitle,
+                model: currentChat.model,
+                history: JSON.parse(JSON.stringify(currentChat.history.slice(0, messageIndex + 1))),
+                queue: [],
+                systemPrompt: typeof currentChat.systemPrompt === 'string' ? currentChat.systemPrompt : ''
+            };
             chats.unshift(newChat); currentChatId = newChat.id; saveData(); syncSelectUIs(); renderSidebar(); renderChatArea(); updateInputUI();
+            setTimeout(updateSysPromptBtn, 0);
         }
 
         function toggleContextDivider() {
@@ -2415,7 +2602,7 @@
                     appendMessageHTML(`<span class="loading-pulse">思考中...</span> <span class="time-badge loading-time" data-start="${msg.startTime}">0.0 秒</span> ${tokenHtml}`, 'bot', msg.id, -1, false, true);
                 } else {
                     const role = msg.role === 'user' ? 'user' : 'bot';
-                    const txt = msg.parts && msg.parts[0] ? msg.parts[0].text : '';
+                    const txt = getTextFromParts(msg.parts);
                     appendMessageHTML(txt, role, '', index, false);
                     if (role === 'user' && msg._imgs && msg._imgs.length) {
                         const lastRow = dom.chatArea.lastElementChild;
@@ -2431,23 +2618,36 @@
             });
 
             if (currentChat.queue && currentChat.queue.length > 0) {
-                currentChat.queue.forEach((qItem) => appendMessageHTML(qItem.text, 'user', '', -1, true, false, true));
+                currentChat.queue.forEach((qItem) => appendMessageHTML(qItem.text, 'user', '', -1, autoScrollBottom, false, true));
+            }
+
+            if (forceSnapToBottomAfterRender) {
+                requestAnimationFrame(() => {
+                    dom.chatArea.scrollTop = dom.chatArea.scrollHeight;
+                    if (currentChatId) sessionScrollPositions[currentChatId] = dom.chatArea.scrollTop;
+                    forceSnapToBottomAfterRender = false;
+                });
             }
 
             if (sessionScrollPositions[currentChatId] === undefined) {
-                dom.chatArea.style.scrollBehavior = 'auto';
-                requestAnimationFrame(() => {
-                    dom.chatArea.scrollTop = dom.chatArea.scrollHeight;
-                    setTimeout(() => { dom.chatArea.style.scrollBehavior = ''; }, 50);
-                });
+                if (autoScrollBottom) {
+                    requestAnimationFrame(() => { dom.chatArea.scrollTop = dom.chatArea.scrollHeight; });
+                }
+            } else {
+                if (!autoScrollBottom && !forceSnapToBottomAfterRender) {
+                    const savedTop = sessionScrollPositions[currentChatId];
+                    requestAnimationFrame(() => { dom.chatArea.scrollTop = savedTop; });
+                }
             }
+
+            requestAnimationFrame(() => updateJumpToBottomBtn());
         }
 
         function appendMessageHTML(text, role, id = '', index = -1, autoScroll = true, isRawHTML = false, isQueued = false) {
             const rowDiv = document.createElement('div'); rowDiv.className = `message-row ${role}`; if (id) rowDiv.id = id;
             if (isQueued) rowDiv.classList.add('queued');
             const msgDiv = document.createElement('div'); msgDiv.className = `message ${role}`;
-            if (role === 'bot') { msgDiv.innerHTML = isRawHTML ? text : marked.parse(text); }
+            if (role === 'bot') { msgDiv.innerHTML = isRawHTML ? text : markdownToSafeHTML(text); }
             else {
                 if (isRawHTML) { msgDiv.innerHTML = text; }
                 else {
@@ -2557,13 +2757,16 @@
 
         function handleSendAction() {
             const apiKey = dom.apiKey.value.trim(), text = dom.input.value.trim(), model = dom.modelSelect.value;
+            const wasNearBottomBeforeSend = isNearChatBottom(140);
             if (!apiKey) { switchTab('tab-system'); openSettings(); return alert('初次使用，请设置你的 API Key'); }
             if (!text && !pendingImgs.length) return;
             collapseInput(); dom.input.value = ''; dom.input.style.height = '40px'; updateSendBtnState();
             let targetChat = chats.find(c => c.id === currentChatId);
             if (!targetChat) {
-                targetChat = { id: Date.now(), title: text.substring(0, 15) + (text.length > 15 ? '...' : ''), model: model, history: [], queue: [] };
+                targetChat = { id: Date.now(), title: text.substring(0, 15) + (text.length > 15 ? '...' : ''), model: model, history: [], queue: [], systemPrompt: typeof systemPrompt === 'string' ? systemPrompt : '' };
                 chats.unshift(targetChat); currentChatId = targetChat.id;
+                systemPrompt = '';
+                localStorage.setItem('gemini_draft_system_prompt', '');
             }
             if (!targetChat.queue) targetChat.queue = [];
             if (abortControllers[targetChat.id]) {
@@ -2575,10 +2778,13 @@
             }
             const imgs = pendingImgs.splice(0);
             renderPendingImgs();
-            executeApiRequest(targetChat, text, model, apiKey, imgs);
+            executeApiRequest(targetChat, text, model, apiKey, imgs, wasNearBottomBeforeSend);
         }
 
-        async function executeApiRequest(targetChat, text, model, apiKey, imgs) {
+        async function executeApiRequest(targetChat, text, model, apiKey, imgs, wasNearBottomHint = null) {
+            const isCurrentChat = currentChatId === targetChat.id;
+            const wasNearBottom = isCurrentChat ? (wasNearBottomHint === true || isNearChatBottom(140)) : false;
+
             if (targetChat.history.length === 0) { targetChat.title = text.substring(0, 15) + (text.length > 15 ? '...' : ''); renderSidebar(); }
             targetChat.history.push({ role: "user", parts: [{ text: text }], _imgs: (imgs || []) });
 
@@ -2594,17 +2800,35 @@
             }
 
             let estimatedTokens = 0;
-            if (showTokenEstimate) { let textStr = ""; validContext.forEach(m => { if (m.parts && m.parts[0]) textStr += m.parts[0].text; }); estimatedTokens = Math.ceil(textStr.length * 0.7); }
+            if (showTokenEstimate) {
+                const textStr = validContext.map(m => getTextFromParts(m.parts)).join('');
+                estimatedTokens = Math.ceil(textStr.length * 0.7);
+            }
 
             const loadingId = 'msg-' + Date.now();
             const loadingObj = { role: "loading", startTime: Date.now(), id: loadingId, tokens: estimatedTokens };
             targetChat.history.push(loadingObj);
-            delete sessionScrollPositions[targetChat.id];
+            if (isCurrentChat) {
+                if (autoScrollBottom) delete sessionScrollPositions[targetChat.id];
+                else sessionScrollPositions[targetChat.id] = dom.chatArea.scrollTop;
+            } else {
+                if (autoScrollBottom) delete sessionScrollPositions[targetChat.id];
+            }
+            if (isCurrentChat && !autoScrollBottom) {
+                if (wasNearBottom) {
+                    delete sessionScrollPositions[targetChat.id];
+                    forceSnapToBottomAfterRender = true;
+                    showJumpToBottomHint = false;
+                } else {
+                    showJumpToBottomHint = true;
+                }
+            }
             saveData(); if (currentChatId === targetChat.id) renderChatArea();
 
             let apiContentsBase = validContext;
-            if (systemPrompt && systemPrompt.trim()) {
-                apiContentsBase = [{ role: 'user', parts: [{ text: systemPrompt.trim() }] }, { role: 'model', parts: [{ text: '好的，我明白了。' }] }, ...validContext];
+            const spTrim = (targetChat.systemPrompt || '').trim();
+            if (spTrim) {
+                apiContentsBase = [{ role: 'user', parts: [{ text: spTrim }] }, { role: 'model', parts: [{ text: '好的，我明白了。' }] }, ...validContext];
             }
 
             const apiContents = apiContentsBase.map(m => {
@@ -2616,10 +2840,8 @@
                 return { role: m.role, parts: m.parts };
             });
 
-            const chat = chats.find(c => c.id == targetChat.id);
-            const sysPrompt = (chat && chat.systemPrompt != null && chat.systemPrompt !== '') ? chat.systemPrompt : globalSystemPrompt;
             const requestBody = { contents: apiContents };
-            if (sysPrompt) requestBody.systemInstruction = { parts: [{ text: sysPrompt }] };
+            if (spTrim) requestBody.systemInstruction = { parts: [{ text: spTrim }] };
             if (isSearchEnabled) requestBody.tools = [{ googleSearch: {} }];
 
             abortControllers[targetChat.id] = new AbortController();
@@ -2640,7 +2862,10 @@
 
                 if (!isStream) {
                     const data = await response.json();
-                    finalReplyText = data.candidates[0].content.parts[0].text;
+                    const cand = data.candidates && data.candidates[0];
+                    const parts = cand && cand.content && cand.content.parts;
+                    const text = getTextFromParts(parts);
+                    finalReplyText = text ? text : '（模型返回了空内容；可能是安全过滤、无候选或接口格式变化。）';
                 } else {
                     const reader = response.body.getReader();
                     const decoder = new TextDecoder("utf-8");
@@ -2658,13 +2883,24 @@
                                 try {
                                     const data = JSON.parse(dataStr);
                                     if (data.candidates && data.candidates[0].content) {
-                                        const chunk = data.candidates[0].content.parts[0].text || "";
+                                        const p = data.candidates[0].content.parts;
+                                        const chunk = getTextFromParts(p);
                                         finalReplyText += chunk;
                                         if (currentChatId === targetChat.id) {
                                             const msgRow = document.getElementById(loadingId);
                                             if (msgRow) {
-                                                msgRow.querySelector('.message').innerHTML = marked.parse(finalReplyText);
-                                                if (dom.chatArea.scrollHeight - dom.chatArea.scrollTop - dom.chatArea.clientHeight < 150) dom.chatArea.scrollTop = dom.chatArea.scrollHeight;
+                                                msgRow.querySelector('.message').innerHTML = markdownToSafeHTML(finalReplyText);
+                                                if (autoScrollBottom) {
+                                                    if (dom.chatArea.scrollHeight - dom.chatArea.scrollTop - dom.chatArea.clientHeight < 150) dom.chatArea.scrollTop = dom.chatArea.scrollHeight;
+                                                } else {
+                                                    if (isNearChatBottom(120)) {
+                                                        dom.chatArea.scrollTop = dom.chatArea.scrollHeight;
+                                                        showJumpToBottomHint = false;
+                                                    } else {
+                                                        showJumpToBottomHint = true;
+                                                    }
+                                                    updateJumpToBottomBtn();
+                                                }
                                             }
                                         }
                                     }
@@ -2672,6 +2908,9 @@
                             }
                         }
                     }
+                }
+                if (finalReplyText === '') {
+                    finalReplyText = '（模型返回了空内容；可能是安全过滤、无候选或接口格式变化。）';
                 }
 
                 if (loadingIdx > -1) targetChat.history[loadingIdx] = { role: "model", parts: [{ text: finalReplyText }] };
@@ -2698,7 +2937,14 @@
                 } else {
                     delete abortControllers[targetChat.id];
                     if (currentChatId !== targetChat.id) unreadCompletedChats.add(targetChat.id);
-                    else { renderChatArea(); updateInputUI(); dom.input.focus(); }
+                    else {
+                        if (!autoScrollBottom && isNearChatBottom(160)) {
+                            delete sessionScrollPositions[currentChatId];
+                            forceSnapToBottomAfterRender = true;
+                            showJumpToBottomHint = false;
+                        }
+                        renderChatArea(); updateInputUI(); dom.input.focus();
+                    }
                     renderSidebar();
                 }
             }
