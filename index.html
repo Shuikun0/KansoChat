@@ -2347,6 +2347,8 @@
 
         /** 是否用程序拉回主输入框焦点（用于隐藏光标，不抢「正在编辑」的视觉） */
         let messageInputAmbientCaret = false;
+        /** 本次 pointerdown 是否在聊天气泡上；用于 blur 时 relatedTarget 常为 null 仍允许失焦，避免抢焦点破坏划选 */
+        let allowBlurFromMessagePointer = false;
         function syncMessageInputAmbientCaret() {
             if (!dom.input) return;
             dom.input.classList.toggle('ambient-focus', document.activeElement === dom.input && messageInputAmbientCaret);
@@ -2361,7 +2363,9 @@
 
         /** 无浮层时：主输入框失焦后自动拉回焦点（拼音/日语等 IME 需真实焦点，不能用 preventDefault+插字） */
         function shouldAllowMessageInputBlur(e) {
+            if (allowBlurFromMessagePointer) return true;
             const t = e.relatedTarget;
+            if (t && t.closest && t.closest('.message-row')) return true;
             if (!t) return false;
             if (t === dom.input) return true;
             if (t.closest && t.closest('#sidebar')) return true;
@@ -2383,8 +2387,8 @@
         }
 
         /**
-         * 在 pointerdown/mousedown 捕获阶段拉回主输入框焦点（早于 keydown），拼音等 IME 才能把首键交给输入法。
-         * 对 Shift+拖拽保留默认行为，便于在气泡里划选文字。
+         * 在 pointerdown 捕获阶段拉回主输入框焦点（早于 keydown），便于 IME。
+         * 聊天气泡（.message-row）不拦截，避免 preventDefault 导致无法划选复制；空白区仍可用 Shift+拖拽划选。
          */
         function keepMessageInputFocusOnMainPointer(e) {
             if (e.pointerType === 'mouse' && e.button !== 0) return;
@@ -2397,6 +2401,8 @@
             if (el.closest('#jump-to-bottom-wrap')) return;
             if (el.closest('#search-bar')) return;
             if (el.closest('a[href], button, input, textarea, select, [contenteditable], .code-block')) return;
+            // 气泡内需保留默认划选，不可 preventDefault（否则无法复制）
+            if (el.closest('.message-row')) return;
             if (e.shiftKey) return;
             dom.input.focus({ preventScroll: true });
             e.preventDefault();
@@ -2480,6 +2486,16 @@
                 updateSendBtnState();
             });
 
+            // 点在气泡上且焦点在主输入框时先 blur，否则划选会与 textarea 抢焦点；blur 里用 allowBlurFromMessagePointer 避免再抢回
+            document.addEventListener('pointerdown', (e) => {
+                const raw = e.target;
+                const el = raw && raw.nodeType === 1 ? raw : raw && raw.parentElement;
+                if (!el || !el.closest) { allowBlurFromMessagePointer = false; return; }
+                const inRow = !!el.closest('.message-row');
+                allowBlurFromMessagePointer = inRow;
+                if (inRow && document.activeElement === dom.input) dom.input.blur();
+            }, true);
+
             const mainEl = document.getElementById('main');
             if (mainEl) {
                 mainEl.addEventListener('pointerdown', keepMessageInputFocusOnMainPointer, true);
@@ -2504,8 +2520,10 @@
             }
             dom.input.addEventListener('compositionstart', () => { clearMessageInputAmbientCaret(); });
             dom.input.addEventListener('blur', (e) => {
-                if (isAnyOverlayOpen()) return;
-                if (shouldAllowMessageInputBlur(e)) return;
+                if (isAnyOverlayOpen()) { allowBlurFromMessagePointer = false; return; }
+                const allow = shouldAllowMessageInputBlur(e);
+                if (allowBlurFromMessagePointer) allowBlurFromMessagePointer = false;
+                if (allow) return;
                 setTimeout(() => {
                     if (document.activeElement === dom.input) return;
                     if (isAnyOverlayOpen()) return;
