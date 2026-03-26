@@ -160,20 +160,28 @@
             white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;
             font-size: 14px; line-height: 22px; min-height: 22px;
         }
-        /* 重命名：整行变成「输入框」，内层仍是透明文本域 */
+        /* 重命名：--input-bg + Material 式双层 inset（位移均为 0：边线层 + 漫反射层，无方向偏移） */
         .drag-item.chat-item--renaming {
             cursor: text;
             user-select: text;
             background: var(--input-bg) !important;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            box-sizing: border-box;
-            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.06);
+            border: none;
+            box-shadow:
+                inset 0 0 0 1px rgba(0, 0, 0, 0.05),
+                inset 0 0 3px 1px rgba(0, 0, 0, 0.05);
             pointer-events: none;
         }
-        .drag-item.chat-item--renaming:focus-within {
-            border-color: var(--msg-user);
-            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(16, 163, 127, 0.25);
+        :root[data-theme="dark"] .drag-item.chat-item--renaming {
+            box-shadow:
+                inset 0 0 0 1px rgba(255, 255, 255, 0.06),
+                inset 0 0 4px 1px rgba(0, 0, 0, 0.26);
+        }
+        @media (prefers-color-scheme: dark) {
+            :root[data-theme="auto"] .drag-item.chat-item--renaming {
+                box-shadow:
+                    inset 0 0 0 1px rgba(255, 255, 255, 0.06),
+                    inset 0 0 4px 1px rgba(0, 0, 0, 0.26);
+            }
         }
         .drag-item.chat-item--renaming .rename-input,
         .drag-item.chat-item--renaming .delete-chat-btn {
