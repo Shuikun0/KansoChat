@@ -1828,7 +1828,8 @@
                 const items = [...container.querySelectorAll('.settings-preset-item:not(.dragging)')];
                 let target = null;
                 for (const it of items) {
-                    if (e.clientY < it.getBoundingClientRect().top + it.getBoundingClientRect().height / 2) { target = it; break; }
+                    const r = it.getBoundingClientRect();
+                    if (e.clientY < r.top + r.height / 2) { target = it; break; }
                 }
                 container.querySelectorAll('.drop-line-top,.drop-line-bottom').forEach(el => el.classList.remove('drop-line-top', 'drop-line-bottom'));
                 if (target) target.classList.add('drop-line-top');
@@ -1841,7 +1842,8 @@
                 const items = [...container.querySelectorAll('.settings-preset-item:not(.dragging)')];
                 let targetId = null; let appendEnd = true;
                 for (const it of items) {
-                    if (e.clientY < it.getBoundingClientRect().top + it.getBoundingClientRect().height / 2) {
+                    const r = it.getBoundingClientRect();
+                    if (e.clientY < r.top + r.height / 2) {
                         targetId = Number(it.dataset.pid); appendEnd = false; break;
                     }
                 }
@@ -2008,18 +2010,9 @@
         function updateJumpToBottomBtn() {
             const wrap = document.getElementById('jump-to-bottom-wrap');
             if (!wrap) return;
-            if (autoScrollBottom) {
-                wrap.style.display = 'none';
-                wrap.setAttribute('aria-hidden', 'true');
-                return;
-            }
             const chat = currentChatId ? chats.find(c => c.id === currentChatId) : null;
-            if (!chat || !chat.history || chat.history.length === 0) {
-                wrap.style.display = 'none';
-                wrap.setAttribute('aria-hidden', 'true');
-                return;
-            }
-            if (!showJumpToBottomHint) {
+            const show = !autoScrollBottom && chat && chat.history && chat.history.length > 0 && showJumpToBottomHint;
+            if (!show) {
                 wrap.style.display = 'none';
                 wrap.setAttribute('aria-hidden', 'true');
                 return;
@@ -3969,11 +3962,10 @@
             const loadingId = 'msg-' + Date.now();
             const loadingObj = { role: "loading", startTime: Date.now(), id: loadingId, tokens: estimatedTokens };
             targetChat.history.push(loadingObj);
-            if (isCurrentChat) {
-                if (autoScrollBottom) delete sessionScrollPositions[targetChat.id];
-                else sessionScrollPositions[targetChat.id] = dom.chatArea.scrollTop;
-            } else {
-                if (autoScrollBottom) delete sessionScrollPositions[targetChat.id];
+            if (autoScrollBottom) {
+                delete sessionScrollPositions[targetChat.id];
+            } else if (isCurrentChat) {
+                sessionScrollPositions[targetChat.id] = dom.chatArea.scrollTop;
             }
             if (isCurrentChat && !autoScrollBottom) {
                 if (wasNearBottom) {
