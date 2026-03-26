@@ -24,7 +24,8 @@
             --code-bg: #1e1e1e;
             --code-text: #d4d4d4;
             --input-bg: #ffffff;
-            --modal-bg: rgba(0, 0, 0, 0.4);
+            /* 主题色半透明遮罩（基于主背景，不用纯黑） */
+            --modal-bg: color-mix(in srgb, var(--bg-main) 42%, transparent);
             --bg-translucent: rgba(255, 255, 255, 0.92);
             --bg-transparent: rgba(255, 255, 255, 0);
             --header-height: 57px;
@@ -43,7 +44,7 @@
             --code-bg: #000000;
             --code-text: #cccccc;
             --input-bg: #2f2f2f;
-            --modal-bg: rgba(0, 0, 0, 0.6);
+            --modal-bg: color-mix(in srgb, var(--bg-main) 42%, transparent);
             --bg-translucent: rgba(33, 33, 33, 0.92);
             --bg-transparent: rgba(33, 33, 33, 0);
         }
@@ -61,7 +62,7 @@
                 --code-bg: #000000;
                 --code-text: #cccccc;
                 --input-bg: #2f2f2f;
-                --modal-bg: rgba(0, 0, 0, 0.6);
+                --modal-bg: color-mix(in srgb, var(--bg-main) 72%, transparent);
                 --bg-translucent: rgba(33, 33, 33, 0.92);
                 --bg-transparent: rgba(33, 33, 33, 0);
             }
@@ -98,9 +99,43 @@
         }
         .btn-base:hover { background-color: var(--bg-sidebar-hover); }
 
+        /* 负 margin 把滚动条推向侧栏右缘（靠近与主区交界）；内边距给列表内容与滑轨留缝，避免压住删除按钮 */
         #chat-list {
-            flex: 1; overflow-y: auto; margin-top: 15px;
-            display: flex; flex-direction: column; gap: 5px; padding-right: 2px;
+            flex: 1;
+            margin-top: 15px;
+            margin-right: -8px;
+            padding-right: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            overflow-y: auto;
+            overflow-y: overlay;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+        #chat-list.chat-list-scrollbar-visible {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(128, 128, 128, 0.25) transparent;
+        }
+        #chat-list::-webkit-scrollbar {
+            width: 0;
+            height: 0;
+        }
+        #chat-list.chat-list-scrollbar-visible::-webkit-scrollbar {
+            width: 14px;
+        }
+        #chat-list::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        /* 与主聊天区 ::-webkit-scrollbar-thumb 一致 */
+        #chat-list::-webkit-scrollbar-thumb {
+            background-color: rgba(128, 128, 128, 0.25);
+            border-radius: 10px;
+            border: 4px solid transparent;
+            background-clip: padding-box;
+        }
+        #chat-list::-webkit-scrollbar-thumb:hover {
+            background-color: rgba(128, 128, 128, 0.45);
         }
 
         .drag-item {
@@ -115,22 +150,108 @@
         .drop-line-top { box-shadow: inset 0 2px 0 var(--msg-user) !important; z-index: 10; border-top-left-radius: 0; border-top-right-radius: 0; }
         .drop-line-bottom { box-shadow: inset 0 -2px 0 var(--msg-user) !important; z-index: 10; border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
 
-        .chat-title-wrapper { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; }
+        /* 左侧与「新对话」等对齐不变；仅在右侧多留一点空隙给删除区，不增加标题左缘缩进 */
+        .chat-title-wrapper { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; padding-right: 0.45em; }
         .status-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; display: none; }
         .status-dot.thinking { display: block; background-color: #f59e0b; box-shadow: 0 0 5px rgba(245, 158, 11, 0.6); animation: pulse 1.5s infinite; }
         .status-dot.unread { display: block; background-color: #10a37f; box-shadow: 0 0 5px rgba(16, 163, 127, 0.6); }
-        .chat-title-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
-        .rename-input { flex: 1; min-width: 0; background: var(--input-bg); color: var(--text-main); border: 1px solid var(--msg-user); border-radius: 4px; padding: 2px 6px; font-size: 14px; outline: none; font-family: inherit; }
+        /* 固定行高，避免英文/中文因字体度量导致行框高度不一致（按中文 14px 常用行框） */
+        .chat-title-text {
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;
+            font-size: 14px; line-height: 22px; min-height: 22px;
+        }
+        /* 重命名：整行变成「输入框」，内层仍是透明文本域 */
+        .drag-item.chat-item--renaming {
+            cursor: text;
+            user-select: text;
+            background: var(--input-bg) !important;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            box-sizing: border-box;
+            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.06);
+            pointer-events: none;
+        }
+        .drag-item.chat-item--renaming:focus-within {
+            border-color: var(--msg-user);
+            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(16, 163, 127, 0.25);
+        }
+        .drag-item.chat-item--renaming .rename-input,
+        .drag-item.chat-item--renaming .delete-chat-btn {
+            pointer-events: auto;
+        }
+        .rename-input {
+            flex: 1; min-width: 0; display: block; width: 100%;
+            margin: 0; padding: 0; border: none; border-radius: 0;
+            background: transparent; box-shadow: none;
+            -webkit-appearance: none; appearance: none;
+            font-size: 14px; line-height: 22px; min-height: 22px;
+            font-family: inherit; font-weight: inherit;
+            color: var(--text-main);
+            white-space: nowrap; outline: none; cursor: text;
+            caret-color: auto;
+        }
 
-        .delete-chat-btn { background: none; border: none; color: var(--text-muted); cursor: pointer; opacity: 0; pointer-events: none; padding: 0 0 0 5px; display: flex; align-items: center; }
+        .chat-item-actions { display: flex; align-items: center; justify-content: flex-end; flex-shrink: 0; }
+        /* 与原先删除按钮一致：与标题间距 5px、图标区 14×14、与行垂直居中（align-self:center） */
+        .chat-action-slot {
+            box-sizing: content-box;
+            flex-shrink: 0;
+            padding: 0 0 0 5px;
+            align-self: center;
+            display: grid;
+            grid-template-columns: 14px;
+            grid-template-rows: 14px;
+            place-items: center;
+        }
+        .chat-pin-badge {
+            grid-area: 1 / 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 14px;
+            height: 14px;
+            transform: translateY(1.5px);
+            pointer-events: none;
+            user-select: none;
+            color: var(--text-muted);
+            opacity: 0.4;
+        }
+        .drag-item:hover .chat-pin-badge { display: none !important; }
+        .delete-chat-btn {
+            grid-area: 1 / 1;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            opacity: 0;
+            pointer-events: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 14px;
+            height: 14px;
+            box-sizing: border-box;
+        }
         .drag-item:hover .delete-chat-btn { opacity: 1; pointer-events: auto; }
         .delete-chat-btn:hover { color: var(--text-main); }
 
-        .settings-container { margin-top: 10px; border-top: 1px solid var(--border-color); padding-top: 10px; display: flex; justify-content: flex-start; }
+        .settings-container { margin-top: 10px; border-top: none; padding-top: 10px; display: flex; justify-content: flex-start; }
+        .settings-container.settings-divider-visible { border-top: 1px solid var(--border-color); }
         .settings-btn { background: transparent; border: none; cursor: pointer; color: var(--text-muted); padding: 8px; border-radius: 8px; transition: 0.2s; display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; }
         .settings-btn:hover { background: var(--bg-sidebar-hover); color: var(--text-main); }
 
         #main { flex: 1; display: flex; flex-direction: column; position: relative; min-width: 0; overflow: hidden; }
+
+        /* 全幅画布底色（将来透明顶/底栏时仍铺满）；滚动条仅属于 #chat-area，不贯穿顶栏底栏 */
+        #chat-canvas-bg {
+            position: absolute;
+            inset: 0;
+            z-index: 0;
+            background: var(--bg-main);
+            pointer-events: none;
+        }
 
         #header {
             position: absolute; top: 0; left: 0; right: 0; height: var(--header-height);
@@ -141,9 +262,18 @@
         }
 
         #chat-area {
-            position: absolute; inset: 0; overflow-y: auto;
-            padding: calc(var(--header-height) + 20px) 20px calc(var(--input-height) + 20px);
-            display: flex; flex-direction: column; gap: 20px; scroll-behavior: auto;
+            position: absolute;
+            top: var(--header-height);
+            bottom: var(--input-height);
+            left: 0;
+            right: 0;
+            z-index: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            scroll-behavior: auto;
         }
 
         #jump-to-bottom-wrap {
@@ -270,6 +400,81 @@
         .message p { margin: 0 0 10px 0; }
         .message p:last-child { margin: 0; }
 
+        /* 用户长消息折叠（仅当设置开启且超过字节阈值时注入） */
+        .user-msg-collapsible {
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+        }
+        .user-msg-collapsible-inner { position: relative; }
+        .user-msg-collapsible.user-msg-is-collapsed .user-msg-collapsible-inner {
+            max-height: min(32vh, 240px);
+            overflow: hidden;
+        }
+        .user-msg-collapsible:not(.user-msg-is-collapsed) .user-msg-collapsible-inner { max-height: 5000px; }
+        /* 多段渐变 + 略长过渡区，避免「一刀切」的生硬感 */
+        .user-msg-collapsible.user-msg-is-collapsed .user-msg-collapsible-inner::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            height: 76px;
+            pointer-events: none;
+            z-index: 1;
+            background: linear-gradient(
+                to bottom,
+                color-mix(in srgb, var(--msg-user) 0%, transparent) 0%,
+                color-mix(in srgb, var(--msg-user) 8%, transparent) 28%,
+                color-mix(in srgb, var(--msg-user) 28%, transparent) 55%,
+                color-mix(in srgb, var(--msg-user) 62%, transparent) 78%,
+                var(--msg-user) 100%
+            );
+        }
+        .message-row.queued .user-msg-collapsible.user-msg-is-collapsed .user-msg-collapsible-inner::after {
+            background: linear-gradient(
+                to bottom,
+                color-mix(in srgb, var(--msg-user) 0%, transparent) 0%,
+                color-mix(in srgb, var(--msg-user) 6%, transparent) 30%,
+                color-mix(in srgb, var(--msg-user) 22%, transparent) 58%,
+                color-mix(in srgb, var(--msg-user) 42%, transparent) 82%,
+                color-mix(in srgb, var(--msg-user) 50%, transparent) 100%
+            );
+        }
+        .user-msg-toggle {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            width: 100%;
+            box-sizing: border-box;
+            margin: 0.35rem 0 0 0;
+            padding: 6px 10px 2px;
+            border: none;
+            border-radius: 0;
+            background: transparent;
+            color: color-mix(in srgb, var(--msg-user-text) 70%, transparent);
+            font: inherit;
+            font-size: 12px;
+            font-weight: 500;
+            letter-spacing: 0.04em;
+            line-height: 1.2;
+            overflow: visible;
+            cursor: pointer;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .user-msg-toggle:hover { color: color-mix(in srgb, var(--msg-user-text) 86%, transparent); }
+        .user-msg-toggle:focus-visible { outline: 2px solid rgba(255, 255, 255, 0.45); outline-offset: 2px; }
+        .user-msg-toggle-chevron {
+            display: inline-flex;
+            flex-shrink: 0;
+        }
+        .user-msg-collapsible:not(.user-msg-is-collapsed) .user-msg-toggle-chevron { transform: rotate(180deg); }
+
         .code-block { margin: 10px 0; border-radius: 8px; overflow: hidden; background-color: var(--code-bg); border: 1px solid var(--border-color); transition: border-color 0.2s; }
         .code-block:hover { border-color: var(--text-muted); }
         .code-block.copy-feedback { border-color: var(--msg-user) !important; transition: none !important; }
@@ -284,9 +489,28 @@
         .code-block.collapsed .code-preview { display: flex; }
         .code-block:not(.collapsed) .code-preview { display: none; }
         .code-preview pre { padding: 8px 12px; margin: 0; }
-        .code-fold-btn { background: rgba(128, 128, 128, 0.1); text-align: center; font-size: 12px; color: var(--text-muted); cursor: pointer; padding: 6px; border-top: 1px dashed var(--border-color); border-bottom: 1px dashed var(--border-color); transition: 0.2s; user-select: none; font-family: monospace; }
-        .code-fold-btn:hover { background: rgba(128, 128, 128, 0.2); color: var(--text-main); }
-        .code-fold-btn-bottom { border-top: 1px dashed var(--border-color); border-bottom: none; background: rgba(128, 128, 128, 0.05); }
+        /* 折叠条始终在深色代码底上呈现：不用页面 --border / --text-main，避免亮色主题下虚线过亮、悬停文字跳成黑色 */
+        .code-fold-btn {
+            text-align: center; font-size: 12px; cursor: pointer; padding: 6px;
+            user-select: none; font-family: monospace; transition: background 0.2s, color 0.2s;
+            background: rgba(255, 255, 255, 0.06);
+            color: rgba(255, 255, 255, 0.42);
+            border-top: 1px dashed rgba(255, 255, 255, 0.1);
+            border-bottom: 1px dashed rgba(255, 255, 255, 0.1);
+        }
+        .code-fold-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.78);
+        }
+        .code-fold-btn-bottom {
+            border-top: 1px dashed rgba(255, 255, 255, 0.1);
+            border-bottom: none;
+            background: rgba(255, 255, 255, 0.04);
+        }
+        .code-fold-btn-bottom:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.78);
+        }
 
         textarea { flex: 1; border: none; background: transparent; color: var(--text-main); font-size: 15px; resize: none; outline: none; padding: 8px; font-family: inherit; height: 40px; max-height: 200px; overflow-y: auto; }
         textarea.expanded { height: 75vh !important; max-height: 75vh !important; }
@@ -307,7 +531,7 @@
         }
         #stop-btn:hover { background-color: #ff7875; }
 
-        #settings-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--modal-bg); z-index: 2000; justify-content: center; align-items: center; backdrop-filter: blur(2px); }
+        #settings-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--modal-bg); z-index: 2000; justify-content: center; align-items: center; backdrop-filter: blur(0.8px); -webkit-backdrop-filter: blur(0.8px); }
         .modal-content { background: var(--bg-main); border-radius: 12px; width: 680px; height: 500px; display: flex; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2); border: 1px solid var(--border-color); overflow: hidden; }
         .settings-sidebar { width: 140px; background: var(--bg-sidebar); border-right: 1px solid var(--border-color); padding: 20px 10px; display: flex; flex-direction: column; gap: 5px; }
         .settings-tab { padding: 10px 15px; border-radius: 8px; border: none; background: transparent; color: var(--text-muted); text-align: left; cursor: pointer; font-size: 14px; font-weight: 500; transition: 0.2s; }
@@ -370,6 +594,37 @@
         .modal-btn:hover { background: var(--bg-sidebar-hover); }
 
         #context-menu { position: fixed; background: var(--bg-main); border: 1px solid var(--border-color); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); border-radius: 8px; z-index: 9999; display: none; overflow: hidden; min-width: 150px; }
+
+        #confirm-dialog-overlay {
+            position: fixed; inset: 0; z-index: 10050; display: none; align-items: center; justify-content: center;
+            padding: 24px; box-sizing: border-box;
+            background: var(--modal-bg);
+            backdrop-filter: blur(0.8px);
+            -webkit-backdrop-filter: blur(0.8px);
+        }
+        .confirm-dialog-box {
+            background: var(--bg-main); border: 1px solid var(--border-color); border-radius: 12px;
+            padding: 22px 24px 20px; min-width: 300px; max-width: min(420px, 100%);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+        }
+        .confirm-dialog-title { margin: 0 0 22px; font-size: 16px; font-weight: 600; color: var(--text-main); line-height: 1.45; }
+        .confirm-dialog-box.has-subtitle .confirm-dialog-title { margin-bottom: 8px; }
+        .confirm-dialog-subtitle {
+            margin: 0 0 18px; font-size: 12px; font-weight: normal; color: var(--text-muted); line-height: 1.5;
+            white-space: pre-line;
+        }
+        .confirm-dialog-actions { display: flex; justify-content: flex-end; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .confirm-dialog-btn {
+            padding: 9px 18px; border-radius: 8px; font-size: 14px; cursor: pointer; font-family: inherit;
+        }
+        .confirm-dialog-btn-neutral {
+            border: 1px solid var(--border-color); background: var(--bg-sidebar-hover); color: var(--text-main);
+        }
+        .confirm-dialog-btn-neutral:hover { background: var(--bg-sidebar-active); }
+        .confirm-dialog-danger {
+            border: 1px solid rgba(224, 46, 42, 1); background: rgba(224, 46, 42, 1); color: #fff;
+        }
+        .confirm-dialog-danger:hover { filter: brightness(1.06); }
         .context-menu-item { padding: 10px 16px; font-size: 13px; cursor: pointer; color: var(--text-main); display: flex; align-items: center; gap: 8px; }
         .context-menu-item:hover { background: var(--bg-sidebar-hover); }
 
@@ -418,7 +673,7 @@
         #search-bar-global-btn svg { opacity: 0.6; }
 
         /* ── 全局搜索面板 ── */
-        #search-panel { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: var(--modal-bg); z-index: 1500; display: none; align-items: flex-start; justify-content: center; padding-top: 80px; backdrop-filter: blur(2px); }
+        #search-panel { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: var(--modal-bg); z-index: 1500; display: none; align-items: flex-start; justify-content: center; padding-top: 80px; backdrop-filter: blur(0.8px); }
         #search-panel.active { display: flex; }
         #search-box { width: 560px; max-height: 70vh; background: var(--bg-main); border: 1px solid var(--border-color); border-radius: 14px; box-shadow: 0 16px 48px rgba(0,0,0,0.2); display: flex; flex-direction: column; overflow: hidden; }
         #search-input-row { display: flex; align-items: center; gap: 8px; padding: 12px 16px; border-bottom: 1px solid var(--border-color); }
@@ -507,7 +762,7 @@
             position: fixed; top: 0; left: 0; right: 0; bottom: 0;
             background: var(--modal-bg); z-index: 3000;
             display: none; align-items: center; justify-content: center;
-            backdrop-filter: blur(2px);
+            backdrop-filter: blur(0.8px);
         }
         #preset-name-dialog.active { display: flex; }
         .preset-name-box {
@@ -517,12 +772,22 @@
             display: flex; flex-direction: column; gap: 14px;
         }
         .preset-name-box h4 { margin: 0; font-size: 15px; font-weight: 600; color: var(--text-main); }
-        .preset-name-box input {
+        .preset-name-box input:not(.preset-dialog-emoji-slot) {
             width: 100%; padding: 9px 12px; border: 1px solid var(--border-color);
             border-radius: 8px; background: var(--input-bg); color: var(--text-main);
             font-size: 14px; outline: none; font-family: inherit; transition: border-color 0.2s;
         }
-        .preset-name-box input:focus { border-color: var(--border-color); }
+        .preset-name-box input:not(.preset-dialog-emoji-slot):focus { border-color: var(--border-color); }
+        /* 与 #preset-emoji-grid 内 .preset-emoji-btn 同尺寸、同边框的方块，保证可粘贴 */
+        .preset-dialog-emoji-slot {
+            min-width: 0; margin: 0; box-sizing: border-box; width: 100%; aspect-ratio: 1;
+            border: 1.5px solid var(--border-color); border-radius: 8px; background: var(--input-bg);
+            color: var(--text-main); font-size: 20px; line-height: 1; text-align: center; padding: 0;
+            outline: none; font-family: inherit; cursor: default;
+            transition: border-color 0.15s, background 0.15s;
+        }
+        .preset-dialog-emoji-slot:hover { background: var(--bg-sidebar-hover); }
+        .preset-dialog-emoji-slot:focus { border-color: var(--msg-user); background: var(--bg-sidebar-active); }
         .preset-name-actions { display: flex; gap: 8px; justify-content: flex-end; }
         .preset-name-actions button {
             padding: 7px 16px; border-radius: 7px; border: 1px solid var(--border-color);
@@ -569,11 +834,42 @@
             outline: none; font-family: inherit; transition: border-color 0.2s;
         }
         .settings-preset-edit-name:focus { border-color: var(--msg-user); }
+        /* 设置内预设编辑：首行 emoji 与标题同高（与下方 28px 选单一致） */
+        .settings-preset-meta-row {
+            display: flex; align-items: center; gap: 8px; width: 100%;
+        }
+        .settings-preset-emoji-slot {
+            box-sizing: border-box; flex-shrink: 0;
+            width: 28px; height: 28px; margin: 0; padding: 0;
+            border: 1.5px solid var(--border-color); border-radius: 6px;
+            background: var(--input-bg); color: var(--text-main);
+            font-size: 16px; line-height: 1; text-align: center;
+            outline: none; font-family: inherit; cursor: default;
+            transition: border-color 0.15s, background 0.15s;
+        }
+        .settings-preset-emoji-slot:hover { background: var(--bg-sidebar-hover); }
+        .settings-preset-emoji-slot:focus { border-color: var(--msg-user); background: var(--bg-sidebar-active); }
+        .settings-preset-edit-name.settings-preset-edit-name--inline {
+            flex: 1; min-width: 0; height: 28px; padding: 0 10px;
+            line-height: 28px; box-sizing: border-box;
+        }
+        .settings-preset-emoji-grid {
+            display: flex; flex-wrap: wrap; gap: 5px; width: 100%; padding-bottom: 2px;
+        }
+        .settings-preset-emoji-btn {
+            width: 28px; height: 28px; box-sizing: border-box; flex-shrink: 0;
+            border-radius: 6px; border: 1.5px solid var(--border-color);
+            background: var(--input-bg); font-size: 16px; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; padding: 0;
+            transition: border-color 0.15s, background 0.15s;
+        }
+        .settings-preset-emoji-btn:hover { background: var(--bg-sidebar-hover); }
+        .settings-preset-emoji-btn.selected { border-color: var(--msg-user); background: var(--bg-sidebar-active); }
         .settings-preset-edit-ta {
-            width: 100%; height: 100px; padding: 8px 10px; border: 1px solid var(--border-color);
-            border-radius: 6px; background: var(--input-bg); color: var(--text-main);
-            font-size: 13px; line-height: 1.6; resize: vertical; outline: none; font-family: inherit;
-            transition: border-color 0.2s;
+            width: 100%; min-height: 300px; max-height: min(70vh, 720px); padding: 8px 10px;
+            border: 1px solid var(--border-color); border-radius: 6px; background: var(--input-bg);
+            color: var(--text-main); font-size: 13px; line-height: 1.6; resize: vertical; outline: none;
+            font-family: inherit; transition: border-color 0.2s; overflow-y: auto; box-sizing: border-box;
         }
         .settings-preset-edit-ta:focus { border-color: var(--msg-user); }
         .settings-preset-edit-footer {
@@ -596,8 +892,13 @@
             display: none; position: absolute; top: calc(100% + 8px); right: 0;
             background: var(--bg-main); border: 1px solid var(--border-color); border-radius: 8px;
             box-shadow: 0 4px 16px rgba(0,0,0,0.12); padding: 10px 14px; font-size: 12px;
-            color: var(--text-muted); white-space: pre-wrap; width: max-content; min-width: 120px; max-width: 320px; max-height: 120px;
-            overflow-y: auto; line-height: 1.6; z-index: 300; pointer-events: none; text-align: left;
+            color: var(--text-muted); white-space: pre-wrap;
+            width: max-content; min-width: 120px; min-height: min-content;
+            max-width: min(92vw, 340px);
+            max-height: min(78vh, 9999px);
+            overflow: auto; overflow-x: hidden;
+            word-break: break-word; line-height: 1.6; z-index: 300; pointer-events: none; text-align: left;
+            flex-shrink: 0; box-sizing: border-box;
         }
         #sysprompt-btn:not(.popup-open):hover .sp-tooltip { display: block; }
         #search-toggle-btn { position: relative; }
@@ -658,7 +959,7 @@
                 新对话
             </button>
             <div id="chat-list"></div>
-            <div class="settings-container">
+            <div class="settings-container" id="sidebar-settings-bar">
                 <button class="settings-btn" onclick="openSettings()" title="偏好设置">
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <circle cx="12" cy="12" r="3"></circle>
@@ -669,6 +970,7 @@
         </div>
 
         <div id="main">
+            <div id="chat-canvas-bg" aria-hidden="true"></div>
             <div id="header">
                 <div class="header-left">
                     <button class="icon-btn" onclick="toggleSidebar()" title="收起/展开边栏 (Alt+Shift+B)">
@@ -822,17 +1124,15 @@
     <div id="preset-name-dialog">
         <div class="preset-name-box" onclick="event.stopPropagation()">
             <h4>收藏提示词</h4>
-            <div style="display: flex; gap: 8px; align-items: stretch; width: 100%;">
-                <div id="selected-emoji-display" style="width: 38px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--input-bg); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; user-select: none;">
-                    💡
-                </div>
-                <input type="text" id="preset-name-input" placeholder="给这条提示词起个名字..." maxlength="30" style="flex: 1; margin: 0;" />
+            <div style="display:grid; grid-template-columns: repeat(8, 1fr); gap: 5px; width: 100%; align-items: center;">
+                <input type="text" id="preset-emoji-input" class="preset-dialog-emoji-slot" value="💡" maxlength="32" autocomplete="off" spellcheck="false" inputmode="text" aria-label="图标"
+                    onpaste="handlePresetDialogEmojiPaste(event)" onblur="onPresetEmojiSlotBlur(this)" />
+                <input type="text" id="preset-name-input" placeholder="给这条提示词起个名字..." maxlength="30" style="grid-column: 2 / -1; margin: 0;" />
             </div>
             <div style="display:flex;flex-direction:column;gap:8px;">
-                <div style="font-size:12px;font-weight:600;color:var(--text-main);">选择图标 <span id="preset-emoji-required" style="color:#ef4444;display:none;">*必选</span></div>
+                <div style="font-size:12px;font-weight:600;color:var(--text-main);">选择图标</div>
                 <div id="preset-emoji-grid" style="display:grid;grid-template-columns:repeat(8,1fr);gap:5px;"></div>
             </div>
-            <input type="hidden" id="preset-emoji-input" value="💡" />
             <div class="preset-name-actions">
                 <button class="preset-name-cancel" onclick="closePresetNameDialog()">取消</button>
                 <button class="preset-name-cancel" onclick="confirmSavePreset()">完成</button>
@@ -902,13 +1202,6 @@
                                 onkeydown="handleCustomHexKey(event)"/>
                         </div>
                     </div>
-                    <div class="setting-block" style="margin-top: 10px;">
-                        <label>长代码块默认状态 (超过12行)</label>
-                        <div class="segment-group">
-                            <button class="segment-btn active" data-collapse-val="true" onclick="setCodeCollapse(true)">默认折叠 (截取首尾)</button>
-                            <button class="segment-btn" data-collapse-val="false" onclick="setCodeCollapse(false)">默认全部展开</button>
-                        </div>
-                    </div>
                 </div>
 
                 <div id="tab-functions" class="settings-pane">
@@ -970,6 +1263,26 @@
                             <button class="segment-btn" data-autoscroll-val="false" onclick="setAutoScrollBottom(false)">关闭</button>
                         </div>
                     </div>
+
+                    <div class="setting-block" style="margin-top: 15px;">
+                        <label>内容折叠</label>
+                        <div style="display: flex; flex-direction: column; gap: 14px; margin-top: 10px;">
+                            <div>
+                                <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 6px;">长代码块默认状态</div>
+                                <div class="segment-group">
+                                    <button class="segment-btn active" data-collapse-val="true" onclick="setCodeCollapse(true)">默认折叠 (截取首尾)</button>
+                                    <button class="segment-btn" data-collapse-val="false" onclick="setCodeCollapse(false)">默认全部展开</button>
+                                </div>
+                            </div>
+                            <div>
+                                <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 6px;">长问题自动折叠（超过 1500 字节）</div>
+                                <div class="segment-group">
+                                    <button class="segment-btn active" data-long-user-msg-val="true" onclick="setLongUserMsgCollapse(true)">开启</button>
+                                    <button class="segment-btn" data-long-user-msg-val="false" onclick="setLongUserMsgCollapse(false)">关闭</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <div id="tab-models" class="settings-pane">
@@ -1004,6 +1317,7 @@
                         <div class="shortcut-item"><span>向上/下跳跃翻气泡</span>
                             <div style="display:flex; gap:5px;"><button class="shortcut-btn" id="sc-jumpUp" onclick="listenShortcut('jumpUp')" style="min-width: 40px;"></button> <button class="shortcut-btn" id="sc-jumpDown" onclick="listenShortcut('jumpDown')" style="min-width: 40px;"></button></div>
                         </div>
+                        <div class="shortcut-item"><span>快速滚动到当前对话最底部</span> <button class="shortcut-btn" id="sc-jumpBottom" onclick="listenShortcut('jumpBottom')"></button></div>
                     </div>
                     <button class="modal-btn" onclick="resetShortcuts()" style="margin-top: 5px;">🔄 恢复默认快捷键</button>
                     <div class="shortcut-list-static" style="margin-top: 10px; border-top: 1px solid var(--border-color); padding-top:10px;">
@@ -1049,7 +1363,7 @@
                                 </svg>
                             </button>
                         </div>
-                        <p class="api-key-hint">密钥保存在本机浏览器本地，请按需保管。若设备会与他人共用，可改用后端代理等方式。</p>
+                        <p class="api-key-hint">密钥保存在本机浏览器本地，请按需保管。</p>
                     </div>
                     <div class="setting-block" style="margin-top: 15px;">
                         <label>数据管理</label>
@@ -1062,8 +1376,32 @@
 
     <div id="context-menu"></div>
 
+    <div id="confirm-dialog-overlay" aria-modal="true" role="dialog">
+        <div class="confirm-dialog-box" id="confirm-dialog-box" onclick="event.stopPropagation()">
+            <h2 class="confirm-dialog-title" id="confirm-dialog-title"></h2>
+            <p class="confirm-dialog-subtitle" id="confirm-dialog-subtitle" hidden></p>
+            <div class="confirm-dialog-actions">
+                <button type="button" class="confirm-dialog-btn confirm-dialog-btn-neutral" id="confirm-dialog-cancel">取消</button>
+                <button type="button" class="confirm-dialog-btn confirm-dialog-danger" id="confirm-dialog-ok">确认</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         let chats = JSON.parse(localStorage.getItem('gemini_chats')) || [];
+        chats.forEach(c => { if (c.pinned === undefined) c.pinned = false; });
+        function normalizeChatOrder() {
+            const pinned = chats.filter(c => c.pinned);
+            const unpinned = chats.filter(c => !c.pinned);
+            chats.length = 0;
+            chats.push(...pinned, ...unpinned);
+        }
+        /** 新建会话插在「全部置顶」之后、未置顶区的最上方 */
+        function insertNewChatAfterPinnedSection(newChat) {
+            const pinnedCount = chats.filter(c => c.pinned).length;
+            chats.splice(pinnedCount, 0, newChat);
+        }
+        normalizeChatOrder();
         let currentChatId = localStorage.getItem('gemini_current_chat_id') ? Number(localStorage.getItem('gemini_current_chat_id')) : null;
         let abortControllers = {};
         let pendingImgs = [];
@@ -1083,6 +1421,9 @@
         })();
         let currentTheme = 'auto', currentFont = '15px', currentAccent = '#10a37f';
         let codeDefaultCollapse = localStorage.getItem('gemini_code_collapse') !== 'false';
+        /** 用户消息超过字节阈值时自动折叠（默认开启） */
+        let longUserMsgAutoCollapse = localStorage.getItem('gemini_long_user_msg_collapse') !== 'false';
+        const USER_MSG_COLLAPSE_BYTE_THRESHOLD = 1500;
 
         let queueEnabled = localStorage.getItem('gemini_queue_enabled') !== 'false';
         let queueMax = parseInt(localStorage.getItem('gemini_queue_max') || '5');
@@ -1113,6 +1454,34 @@
 
         const _presetEmojiOptions = ['💡','🗝️','📚','🗺️','🔬','🔦','💵','💎','📟','📺','📦','🧺','🪜','🛋️','🖼️','🪴','⛲','🎢','🛤️','🏗️','🚧','🏬','💈','🏜️','🌱','🌻','🍄','🦋','🪨','🪵','🌊','🔥','☀️','🌙','✨','🪐','🌍','🛸','📡','🛰️','🦄','💀','👽','😈','👾','🧙‍♂️','🧌','🐲','😀','🤩','😂','🧐','😎','🤓','🤐','🤥','😊','😅','😇','🤯','🤫','😌','😶‍🌫️','🤪'];
 
+        /** 取第一个完整字素簇（含 ZWJ 组合 emoji），便于粘贴后只保留一个图标 */
+        function normalizePresetEmoji(s) {
+            s = (s || '').trim();
+            if (!s) return '';
+            if (typeof Intl !== 'undefined' && Intl.Segmenter) {
+                try {
+                    const seg = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
+                    for (const { segment } of seg.segment(s)) return segment;
+                } catch (_) { /* ignore */ }
+            }
+            return s.slice(0, 32);
+        }
+
+        function handlePresetDialogEmojiPaste(e) {
+            e.preventDefault();
+            const t = (e.clipboardData && e.clipboardData.getData('text')) || '';
+            const v = normalizePresetEmoji(t) || '💡';
+            const el = e.target;
+            if (el) el.value = v;
+            renderEmojiGrid(v);
+        }
+
+        function onPresetEmojiSlotBlur(el) {
+            const v = normalizePresetEmoji(el.value) || '💡';
+            el.value = v;
+            renderEmojiGrid(v);
+        }
+
         function renderEmojiGrid(selectedEmoji) {
             const grid = document.getElementById('preset-emoji-grid');
             if (!grid) return;
@@ -1129,11 +1498,6 @@
                         return;
                     }
                     currentInput.value = e;
-                    const displayBox = document.getElementById('selected-emoji-display');
-                    if (displayBox) {
-                        // 没有任何附加动画，瞬间替换字符
-                        displayBox.textContent = e;
-                    }
                     grid.querySelectorAll('.preset-emoji-btn').forEach(b => b.classList.remove('selected'));
                     btn.classList.add('selected');
                     document.getElementById('preset-name-input').focus();
@@ -1145,7 +1509,8 @@
 
         function closePresetNameDialog() {
             document.getElementById('preset-name-dialog').classList.remove('active');
-            document.getElementById('preset-emoji-input').value = '';
+            const em = document.getElementById('preset-emoji-input');
+            if (em) em.value = '💡';
             _pendingSaveContent = '';
         }
 
@@ -1162,9 +1527,6 @@
             // 设定默认 Emoji，这样用户不必每次都选，输入文字后可直接秒按回车保存
             const defaultEmoji = '💡';
             document.getElementById('preset-emoji-input').value = defaultEmoji;
-            const displayBox = document.getElementById('selected-emoji-display');
-            if (displayBox) displayBox.textContent = defaultEmoji;
-            
             renderEmojiGrid(defaultEmoji);
             dialog.classList.add('active');
             setTimeout(() => nameInput.focus(), 50);
@@ -1172,13 +1534,9 @@
 
         function confirmSavePreset() {
             const name = document.getElementById('preset-name-input').value.trim();
-            const emoji = document.getElementById('preset-emoji-input').value.trim();
+            const emoji = normalizePresetEmoji(document.getElementById('preset-emoji-input').value) || '💡';
+            document.getElementById('preset-emoji-input').value = emoji;
             if (!name) { document.getElementById('preset-name-input').focus(); return; }
-            if (!emoji) {
-                const req = document.getElementById('preset-emoji-required');
-                if (req) { req.style.display = 'inline'; setTimeout(() => req.style.display = 'none', 1500); }
-                return;
-            }
             const newPreset = { id: Date.now(), name, emoji, content: _pendingSaveContent };
             promptPresets.push(newPreset);
             savePresets();
@@ -1327,47 +1685,95 @@
                 const editArea = document.createElement('div');
                 editArea.className = 'settings-preset-edit-area';
 
-                // emoji 行
+                // 首行：与标题同高的 emoji 格 + 名称；下方为紧凑 28px 图标选单（与早期布局一致）
                 const emojiRow = document.createElement('div');
-                emojiRow.style.cssText = 'display:flex;gap:5px;flex-wrap:wrap;padding-bottom:4px;';
+                emojiRow.className = 'settings-preset-emoji-grid';
+
+                const emojiSlot = document.createElement('input');
+                emojiSlot.type = 'text';
+                emojiSlot.className = 'settings-preset-emoji-slot';
+                emojiSlot.value = preset.emoji || '💡';
+                emojiSlot.maxLength = 32;
+                emojiSlot.autocomplete = 'off';
+                emojiSlot.spellcheck = false;
+                emojiSlot.setAttribute('aria-label', '图标');
+                emojiSlot.onclick = e => e.stopPropagation();
+
+                function syncSettingsEmojiGridHighlight(current) {
+                    emojiRow.querySelectorAll('.settings-preset-emoji-btn').forEach(b => {
+                        b.classList.toggle('selected', b.textContent === current);
+                    });
+                }
+
+                const applySettingsPresetEmoji = (raw) => {
+                    const em = normalizePresetEmoji(raw) || '💡';
+                    const idx = promptPresets.findIndex(p => p.id === preset.id);
+                    if (idx < 0) return;
+                    promptPresets[idx].emoji = em;
+                    emojiSlot.value = em;
+                    savePresets();
+                    renderPopupPresets();
+                    updateSysPromptBtn();
+                    nameEl.textContent = em + ' ' + promptPresets[idx].name;
+                    syncSettingsEmojiGridHighlight(em);
+                };
+
+                emojiSlot.addEventListener('paste', (ev) => {
+                    ev.preventDefault();
+                    ev.stopPropagation();
+                    const t = (ev.clipboardData && ev.clipboardData.getData('text')) || '';
+                    applySettingsPresetEmoji(t);
+                });
+                emojiSlot.addEventListener('blur', () => {
+                    const v = normalizePresetEmoji(emojiSlot.value) || '💡';
+                    emojiSlot.value = v;
+                    syncSettingsEmojiGridHighlight(v);
+                    applySettingsPresetEmoji(v);
+                });
+
                 _presetEmojiOptions.forEach(e => {
                     const eb = document.createElement('button');
                     eb.type = 'button';
+                    eb.className = 'settings-preset-emoji-btn' + (e === preset.emoji ? ' selected' : '');
                     eb.textContent = e;
-                    eb.style.cssText = 'width:28px;height:28px;border-radius:6px;border:1.5px solid ' + (e === preset.emoji ? 'var(--msg-user)' : 'var(--border-color)') + ';background:' + (e === preset.emoji ? 'var(--bg-sidebar-active)' : 'var(--input-bg)') + ';font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;transition:border-color .15s,background .15s;';
                     eb.onclick = (ev) => {
                         ev.stopPropagation();
-                        emojiRow.querySelectorAll('button').forEach(b => {
-                            b.style.borderColor = 'var(--border-color)';
-                            b.style.background = 'var(--input-bg)';
-                        });
-                        eb.style.borderColor = 'var(--msg-user)';
-                        eb.style.background = 'var(--bg-sidebar-active)';
-                        const idx = promptPresets.findIndex(p => p.id === preset.id);
-                        if (idx > -1) {
-                            promptPresets[idx].emoji = e;
-                            savePresets();
-                            renderPopupPresets();
-                            updateSysPromptBtn();
-                            // 更新行里的emoji显示
-                            nameEl.textContent = e + ' ' + promptPresets[idx].name;
-                        }
+                        applySettingsPresetEmoji(e);
                     };
+                    eb.addEventListener('paste', ev => {
+                        ev.preventDefault();
+                        ev.stopPropagation();
+                        const t = (ev.clipboardData && ev.clipboardData.getData('text')) || '';
+                        applySettingsPresetEmoji(t);
+                    });
                     emojiRow.appendChild(eb);
                 });
 
+                syncSettingsEmojiGridHighlight(preset.emoji || '💡');
+
+                const metaRow = document.createElement('div');
+                metaRow.className = 'settings-preset-meta-row';
+                metaRow.appendChild(emojiSlot);
+
                 const nameInput = document.createElement('input');
-                nameInput.className = 'settings-preset-edit-name';
+                nameInput.className = 'settings-preset-edit-name settings-preset-edit-name--inline';
                 nameInput.type = 'text';
                 nameInput.value = preset.name;
                 nameInput.placeholder = '预设名称';
                 nameInput.onclick = e => e.stopPropagation();
+                metaRow.appendChild(nameInput);
+
+                const iconLabel = document.createElement('div');
+                iconLabel.style.cssText = 'font-size:12px;font-weight:600;color:var(--text-main);';
+                iconLabel.textContent = '选择图标';
 
                 const contentTA = document.createElement('textarea');
                 contentTA.className = 'settings-preset-edit-ta';
                 contentTA.value = preset.content;
                 contentTA.placeholder = '提示词内容...';
                 contentTA.onclick = e => e.stopPropagation();
+                const _lc = (preset.content || '').split('\n').length;
+                contentTA.rows = Math.max(16, Math.min(48, _lc + 4));
 
                 // 自动保存函数
                 const autoSave = () => {
@@ -1388,8 +1794,9 @@
                 nameInput.addEventListener('blur', autoSave);
                 contentTA.addEventListener('blur', autoSave);
 
+                editArea.appendChild(metaRow);
+                editArea.appendChild(iconLabel);
                 editArea.appendChild(emojiRow);
-                editArea.appendChild(nameInput);
                 editArea.appendChild(contentTA);
 
                 item.appendChild(row);
@@ -1469,11 +1876,9 @@
             if (lbl) lbl.textContent = getModelAlias(m);
         }
 
-        const defaultShortcuts = { newChat: 'KeyN', expandInput: 'KeyF', sysPromptPopup: 'KeyP', toggleSidebar: 'KeyB', jumpUp: 'ArrowUp', jumpDown: 'ArrowDown', switchPrev: 'ArrowLeft', switchNext: 'ArrowRight' };
+        const defaultShortcuts = { newChat: 'KeyN', expandInput: 'KeyI', sysPromptPopup: 'KeyP', toggleSidebar: 'KeyB', jumpUp: 'ArrowUp', jumpDown: 'ArrowDown', jumpBottom: 'KeyJ', switchPrev: 'ArrowLeft', switchNext: 'ArrowRight' };
         let userShortcuts = { ...defaultShortcuts, ...(JSON.parse(localStorage.getItem('gemini_shortcuts')) || {}) };
         let isListeningShortcut = null;
-
-        function getHeaderHeight() { return 57; }
 
         const renderer = {
             link(token) {
@@ -1574,6 +1979,7 @@
 
         const dom = {
             sidebar: document.getElementById('sidebar'), chatList: document.getElementById('chat-list'),
+            settingsBar: document.getElementById('sidebar-settings-bar'),
             chatArea: document.getElementById('chat-area'), input: document.getElementById('message-input'),
             apiKey: document.getElementById('api-key'), sendBtn: document.getElementById('send-btn'), stopBtn: document.getElementById('stop-btn'),
             modelSelect: document.getElementById('model-select'), searchBtn: document.getElementById('search-toggle-btn'),
@@ -1628,6 +2034,18 @@
             if (currentChatId) sessionScrollPositions[currentChatId] = dom.chatArea.scrollTop;
             showJumpToBottomHint = false;
             updateJumpToBottomBtn();
+        }
+
+        function updateSidebarSettingsDividerVisibility() {
+            const list = dom.chatList;
+            const bar = dom.settingsBar;
+            if (!list || !bar) return;
+            if (dom.sidebar && dom.sidebar.classList.contains('collapsed')) {
+                bar.classList.remove('settings-divider-visible');
+                return;
+            }
+            const overflow = list.scrollHeight > list.clientHeight + 1;
+            bar.classList.toggle('settings-divider-visible', overflow);
         }
 
         // ── 搜索功能 ──────────────────────────────────────────────
@@ -1894,6 +2312,10 @@
             updateSysPromptBtn();
             initSortable('chat-list', 'chat');
             initSortable('settings-model-list', 'model');
+            if (typeof ResizeObserver !== 'undefined' && dom.chatList) {
+                new ResizeObserver(updateSidebarSettingsDividerVisibility).observe(dom.chatList);
+            }
+            window.addEventListener('resize', updateSidebarSettingsDividerVisibility);
             // 初始化预设 UI
             renderPopupPresets();
             renderSettingsPromptTab();
@@ -1916,7 +2338,6 @@
             document.querySelectorAll('.settings-pane').forEach(el => el.classList.remove('active'));
             document.querySelector(`.settings-tab[onclick="switchTab('${tabId}')"]`).classList.add('active');
             document.getElementById(tabId).classList.add('active');
-            // 切到 prompt tab 时刷新
             if (tabId === 'tab-prompt') renderSettingsPromptTab();
         }
         document.getElementById('settings-modal').addEventListener('click', (e) => {
@@ -1948,17 +2369,37 @@
             }).catch(err => alert("复制失败: " + err));
         }
 
+        function clampChatDropIndicator(items, insertBefore, draggedPinned, pinnedCount) {
+            if (!items.length) return null;
+            const idx = insertBefore ? items.indexOf(insertBefore) : items.length;
+            if (draggedPinned) {
+                if (insertBefore === null) {
+                    if (pinnedCount > 0 && pinnedCount < items.length) return items[pinnedCount];
+                    return null;
+                }
+                if (idx > pinnedCount) return pinnedCount < items.length ? items[pinnedCount] : null;
+                return insertBefore;
+            }
+            if (insertBefore === null) return null;
+            if (idx < pinnedCount) return pinnedCount < items.length ? items[pinnedCount] : null;
+            return insertBefore;
+        }
+
         function initSortable(containerId, type) {
             const container = document.getElementById(containerId);
             let draggedElement = null;
+            let draggedChatPinned = false;
             container.addEventListener('dragstart', (e) => {
+                if (e.target.closest('button')) { e.preventDefault(); return; }
                 const item = e.target.closest('.drag-item'); if (!item) return;
                 draggedElement = item; e.dataTransfer.effectAllowed = "move";
+                if (type === 'chat') draggedChatPinned = item.dataset.pinned === '1';
                 setTimeout(() => item.classList.add('dragging'), 0);
             });
             container.addEventListener('dragend', () => {
                 if (draggedElement) draggedElement.classList.remove('dragging');
                 draggedElement = null;
+                draggedChatPinned = false;
                 Array.from(container.children).forEach(el => el.classList.remove('drop-line-top', 'drop-line-bottom'));
             });
             container.addEventListener('dragover', (e) => {
@@ -1966,6 +2407,10 @@
                 const items = [...container.querySelectorAll('.drag-item:not(.dragging)')];
                 let insertBeforeItem = null;
                 for (let item of items) { if (e.clientY < item.getBoundingClientRect().top + item.getBoundingClientRect().height / 2) { insertBeforeItem = item; break; } }
+                if (type === 'chat') {
+                    const pinnedCount = items.filter(el => el.dataset.pinned === '1').length;
+                    insertBeforeItem = clampChatDropIndicator(items, insertBeforeItem, draggedChatPinned, pinnedCount);
+                }
                 Array.from(container.children).forEach(el => el.classList.remove('drop-line-top', 'drop-line-bottom'));
                 if (insertBeforeItem) insertBeforeItem.classList.add('drop-line-top');
                 else if (items.length > 0) items[items.length - 1].classList.add('drop-line-bottom');
@@ -1980,13 +2425,26 @@
                         targetDataId = type === 'chat' ? items[i].dataset.id : items[i].dataset.val; appendToEnd = false; break;
                     }
                 }
+                if (type === 'chat') {
+                    const pinnedCount = items.filter(el => el.dataset.pinned === '1').length;
+                    let insertBefore = appendToEnd ? null : items.find(it => (it.dataset.id) == targetDataId);
+                    insertBefore = clampChatDropIndicator(items, insertBefore, draggedChatPinned, pinnedCount);
+                    if (insertBefore) { targetDataId = insertBefore.dataset.id; appendToEnd = false; }
+                    else appendToEnd = true;
+                }
                 const draggedDataId = type === 'chat' ? draggedElement.dataset.id : draggedElement.dataset.val;
                 let arr = type === 'chat' ? chats : savedModels;
                 const originalDataIndex = arr.findIndex(x => (type === 'chat' ? x.id == draggedDataId : x == draggedDataId));
                 let finalTargetIndex = appendToEnd ? arr.length : arr.findIndex(x => (type === 'chat' ? x.id == targetDataId : x == targetDataId));
+                if (!appendToEnd && finalTargetIndex < 0) return;
                 if (originalDataIndex === finalTargetIndex || (originalDataIndex === finalTargetIndex - 1 && !appendToEnd)) return;
                 const draggedItemData = arr.splice(originalDataIndex, 1)[0];
                 if (originalDataIndex < finalTargetIndex) finalTargetIndex--;
+                if (type === 'chat') {
+                    const p0 = arr.filter(c => c.pinned).length + (draggedItemData.pinned ? 1 : 0);
+                    if (draggedItemData.pinned) finalTargetIndex = Math.max(0, Math.min(finalTargetIndex, p0 - 1));
+                    else finalTargetIndex = Math.max(p0, Math.min(finalTargetIndex, arr.length));
+                }
                 arr.splice(finalTargetIndex, 0, draggedItemData);
                 if (type === 'chat') { saveData(); renderSidebar(); }
                 else { localStorage.setItem('gemini_custom_models', JSON.stringify(arr)); renderSettingsModels(); syncSelectUIs(); }
@@ -1996,7 +2454,8 @@
         function jumpToMessage(direction) {
             const chatArea = dom.chatArea;
             const userMsgs = Array.from(chatArea.querySelectorAll('.message-row.user'));
-            const topOffset = getHeaderHeight() + 20;
+            /* #chat-area 已从顶栏下方起算，只需与上内边距对齐 */
+            const topOffset = 20;
             if (direction === 'up') {
                 if (!userMsgs.length) return;
                 let target = null;
@@ -2113,7 +2572,7 @@
             }}]);
         }
 
-        function formatKey(code) { return code.replace('Key', '').replace('Digit', '').replace('ArrowUp', '↑').replace('ArrowDown', '↓').replace('ArrowLeft', '←').replace('ArrowRight', '→'); }
+        function formatKey(code) { return code.replace('Key', '').replace('Digit', '').replace('ArrowUp', '↑').replace('ArrowDown', '↓').replace('ArrowLeft', '←').replace('ArrowRight', '→').replace('End', 'End'); }
 
         function renderShortcutsUI() {
             Object.keys(userShortcuts).forEach(k => {
@@ -2136,6 +2595,56 @@
             document.querySelectorAll('button[data-collapse-val]').forEach(b => b.classList.remove('active'));
             document.querySelector(`button[data-collapse-val="${val}"]`).classList.add('active');
             renderChatArea();
+        }
+
+        function setLongUserMsgCollapse(val) {
+            longUserMsgAutoCollapse = val;
+            localStorage.setItem('gemini_long_user_msg_collapse', val);
+            document.querySelectorAll('button[data-long-user-msg-val]').forEach(b => b.classList.remove('active'));
+            document.querySelector(`button[data-long-user-msg-val="${val}"]`)?.classList.add('active');
+            renderChatArea();
+        }
+
+        function userMessageExceedsCollapseThreshold(text) {
+            return new TextEncoder().encode(text).length > USER_MSG_COLLAPSE_BYTE_THRESHOLD;
+        }
+
+        function wireUserMsgCollapsible(msgDiv) {
+            const wrap = msgDiv.querySelector('.user-msg-collapsible');
+            if (!wrap) return;
+            const btn = wrap.querySelector('.user-msg-toggle');
+            const label = wrap.querySelector('.user-msg-toggle-text');
+            if (!btn || !label) return;
+            const sync = () => {
+                const collapsed = wrap.classList.contains('user-msg-is-collapsed');
+                btn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+                label.textContent = collapsed ? '展开' : '折叠';
+            };
+            const activate = (e) => {
+                e.stopPropagation();
+                const wasExpanded = !wrap.classList.contains('user-msg-is-collapsed');
+                const row = msgDiv.closest('.message-row');
+                const hBefore = row ? row.offsetHeight : 0;
+                wrap.classList.toggle('user-msg-is-collapsed');
+                sync();
+                /* 折叠时以下沿为锚：同步读布局并立刻改 scrollTop，避免 rAF 晚一帧修正导致闪一下 */
+                if (wasExpanded && wrap.classList.contains('user-msg-is-collapsed') && row && dom.chatArea) {
+                    const delta = hBefore - row.offsetHeight;
+                    if (delta > 0) {
+                        const ca = dom.chatArea;
+                        ca.scrollTop = Math.max(0, ca.scrollTop - delta);
+                        if (currentChatId) sessionScrollPositions[currentChatId] = ca.scrollTop;
+                    }
+                }
+            };
+            btn.addEventListener('click', activate);
+            btn.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    activate(e);
+                }
+            });
+            sync();
         }
 
         function setQueueEnable(val) {
@@ -2195,6 +2704,8 @@
             document.querySelector(`.segment-btn[data-theme-val="${currentTheme}"]`)?.classList.add('active');
             document.querySelectorAll('button[data-collapse-val]').forEach(b => b.classList.remove('active'));
             document.querySelector(`button[data-collapse-val="${codeDefaultCollapse}"]`)?.classList.add('active');
+            document.querySelectorAll('button[data-long-user-msg-val]').forEach(b => b.classList.remove('active'));
+            document.querySelector(`button[data-long-user-msg-val="${longUserMsgAutoCollapse}"]`)?.classList.add('active');
             setQueueEnable(queueEnabled);
             dom.queueSlider.value = queueMax; dom.queueDisplay.innerText = queueMax + ' 条';
             setHistoryLimit(historyLimit);
@@ -2232,11 +2743,12 @@
             }
         }
 
-        /** 欢迎页仅展示六项；组合键与设置中的自定义快捷键一致 */
+        /** 欢迎页常用快捷键摘要；与设置中的自定义快捷键一致 */
         function getWelcomeShortcutPackItemsHtml() {
             const fk = (code) => formatKey(code);
             return [
                 `<div class="kanso-shortcut-item"><b>Alt+${fk(userShortcuts.jumpUp)}/${fk(userShortcuts.jumpDown)}</b>跳气泡</div>`,
+                `<div class="kanso-shortcut-item"><b>Alt+${fk(userShortcuts.jumpBottom)}</b>对话到底</div>`,
                 `<div class="kanso-shortcut-item"><b>Alt+${fk(userShortcuts.switchPrev)}/${fk(userShortcuts.switchNext)}</b>切对话</div>`,
                 `<div class="kanso-shortcut-item"><b>Alt+${fk(userShortcuts.sysPromptPopup)}</b>系统提示词</div>`,
                 `<div class="kanso-shortcut-item"><b>Alt+1~9</b>切换模型</div>`,
@@ -2328,6 +2840,8 @@
             if (dom.historyPopup && dom.historyPopup.classList.contains('active')) return true;
             const mdd = document.getElementById('model-dropdown');
             if (mdd && mdd.style.display !== 'none') return true;
+            const cdo = document.getElementById('confirm-dialog-overlay');
+            if (cdo && cdo.style.display === 'flex') return true;
             return false;
         }
 
@@ -2349,6 +2863,8 @@
         let messageInputAmbientCaret = false;
         /** 本次 pointerdown 是否在聊天气泡上；用于 blur 时 relatedTarget 常为 null 仍允许失焦，避免抢焦点破坏划选 */
         let allowBlurFromMessagePointer = false;
+        /** 本次按下是否从气泡开始（松手可能在气泡外）；用于 pointerup 时仍能判断是否该回焦输入框 */
+        let pointerGestureStartedOnMessageRow = false;
         function syncMessageInputAmbientCaret() {
             if (!dom.input) return;
             dom.input.classList.toggle('ambient-focus', document.activeElement === dom.input && messageInputAmbientCaret);
@@ -2380,6 +2896,7 @@
             if (t.closest && t.closest('#context-menu')) return true;
             if (t.closest && t.closest('#model-dropdown')) return true;
             if (t.closest && t.closest('#jump-to-bottom-wrap')) return true;
+            if (t.closest && t.closest('#confirm-dialog-overlay')) return true;
             if (isEditableElement(t) && t !== dom.input) return true;
             const tag = t.tagName;
             if (tag === 'BUTTON' || tag === 'A' || tag === 'SELECT') return true;
@@ -2475,8 +2992,48 @@
         }
 
         let altShortcutFiredAt = 0;
+        let chatListScrollIdleTimer = null;
 
         function setupEventListeners() {
+            if (dom.chatList) {
+                dom.chatList.addEventListener('scroll', () => {
+                    dom.chatList.classList.add('chat-list-scrollbar-visible');
+                    clearTimeout(chatListScrollIdleTimer);
+                    chatListScrollIdleTimer = setTimeout(() => {
+                        dom.chatList.classList.remove('chat-list-scrollbar-visible');
+                    }, 900);
+                }, { passive: true });
+            }
+
+            function openBulkDeleteChatsContextMenu(x, y) {
+                const items = [];
+                if (chats.some(c => !c.pinned)) {
+                    const n = chats.filter(c => !c.pinned).length;
+                    items.push({ label: '🚨 删除全部未置顶的对话', danger: true, action: () => showConfirmDialog('删除全部未置顶的对话？', deleteAllUnpinnedChats, { deleteCount: n }) });
+                }
+                if (chats.length > 0) {
+                    const n = chats.length;
+                    items.push({ label: '🚨 删除全部对话', danger: true, action: () => showConfirmDialog('删除全部对话？', deleteAllChats, { deleteCount: n }) });
+                }
+                if (!items.length) return;
+                showContextMenu(x, y, items);
+            }
+
+            dom.chatList.addEventListener('contextmenu', (e) => {
+                if (e.target.closest && e.target.closest('.drag-item')) return;
+                e.preventDefault();
+                e.stopPropagation();
+                openBulkDeleteChatsContextMenu(e.clientX, e.clientY);
+            });
+
+            if (dom.settingsBar) {
+                dom.settingsBar.addEventListener('contextmenu', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    openBulkDeleteChatsContextMenu(e.clientX, e.clientY);
+                });
+            }
+
             dom.fontSlider.addEventListener('input', (e) => { currentFont = e.target.value + 'px'; dom.fontDisplay.innerText = currentFont; localStorage.setItem('gemini_fontsize', currentFont); applyPreferences(currentTheme, currentFont, currentAccent); });
             dom.queueSlider.addEventListener('input', (e) => { queueMax = parseInt(e.target.value); dom.queueDisplay.innerText = queueMax + ' 条'; localStorage.setItem('gemini_queue_max', queueMax); });
 
@@ -2490,11 +3047,51 @@
             document.addEventListener('pointerdown', (e) => {
                 const raw = e.target;
                 const el = raw && raw.nodeType === 1 ? raw : raw && raw.parentElement;
-                if (!el || !el.closest) { allowBlurFromMessagePointer = false; return; }
+                if (!el || !el.closest) {
+                    allowBlurFromMessagePointer = false;
+                    pointerGestureStartedOnMessageRow = false;
+                    return;
+                }
                 const inRow = !!el.closest('.message-row');
                 allowBlurFromMessagePointer = inRow;
+                pointerGestureStartedOnMessageRow = inRow;
                 if (inRow && document.activeElement === dom.input) dom.input.blur();
             }, true);
+
+            document.addEventListener('pointercancel', () => { pointerGestureStartedOnMessageRow = false; });
+
+            // 手势从气泡开始、松手后若未形成选区则回焦输入框（松手可在气泡外，故不能只看 pointerup.target）
+            document.addEventListener('pointerup', (e) => {
+                if (e.pointerType === 'mouse' && e.button !== 0) return;
+                const startedOnBubble = pointerGestureStartedOnMessageRow;
+                pointerGestureStartedOnMessageRow = false;
+                if (!startedOnBubble) return;
+                const refocusIfNoSelection = () => {
+                    if (isAnyOverlayOpen()) return;
+                    if (dom.contextMenu && dom.contextMenu.style.display === 'block') return;
+                    const sel = window.getSelection();
+                    if (sel && !sel.isCollapsed && sel.toString().length > 0) return;
+                    if (document.activeElement === dom.input) return;
+                    clearMessageInputAmbientCaret();
+                    dom.input.focus({ preventScroll: true });
+                };
+                requestAnimationFrame(() => { requestAnimationFrame(refocusIfNoSelection); });
+            });
+
+            // 从气泡内复制后回焦，便于接着打字（不替代划选；划选时 copy 前不会抢焦点）
+            document.addEventListener('copy', () => {
+                requestAnimationFrame(() => {
+                    const sel = document.getSelection();
+                    const an = sel && sel.anchorNode;
+                    if (!an) return;
+                    const host = an.nodeType === 1 ? an : an.parentElement;
+                    if (!host || !host.closest || !host.closest('.message-row')) return;
+                    if (isAnyOverlayOpen()) return;
+                    if (document.activeElement === dom.input) return;
+                    clearMessageInputAmbientCaret();
+                    dom.input.focus({ preventScroll: true });
+                });
+            });
 
             const mainEl = document.getElementById('main');
             if (mainEl) {
@@ -2550,6 +3147,8 @@
                 if (e.isComposing) return;
 
                 if (e.key === 'Escape') {
+                    const cdo = document.getElementById('confirm-dialog-overlay');
+                    if (cdo && cdo.style.display === 'flex') { closeConfirmDialog(); return; }
                     if (document.getElementById('preset-name-dialog').classList.contains('active')) { closePresetNameDialog(); return; }
                     if (document.getElementById('search-panel').classList.contains('active')) { closeGlobalSearch(); return; }
                     if (document.getElementById('search-bar').classList.contains('active')) { closeSearch(); return; }
@@ -2575,6 +3174,7 @@
                     if (e.code === userShortcuts.newChat) { createNewChat(); }
                     if (e.code === userShortcuts.jumpUp) { e.preventDefault(); jumpToMessage('up'); }
                     if (e.code === userShortcuts.jumpDown) { e.preventDefault(); jumpToMessage('down'); }
+                    if (e.code === userShortcuts.jumpBottom) { e.preventDefault(); jumpToBottomNow(); }
                     if (e.code === userShortcuts.switchPrev) { e.preventDefault(); switchChatDirection(-1); }
                     if (e.code === userShortcuts.switchNext) { e.preventDefault(); switchChatDirection(1); }
                     if (e.code === userShortcuts.toggleSidebar) { toggleSidebar(); }
@@ -2702,7 +3302,10 @@
             });
         }
 
-        function toggleSidebar() { dom.sidebar.classList.toggle('collapsed'); }
+        function toggleSidebar() {
+            dom.sidebar.classList.toggle('collapsed');
+            requestAnimationFrame(() => requestAnimationFrame(updateSidebarSettingsDividerVisibility));
+        }
 
         function closeSysPromptPopup(focusMainInput) {
             const popup = document.getElementById('sysprompt-popup');
@@ -2771,7 +3374,14 @@
             // 重建 tooltip（innerHTML 会清掉它）
             const t = document.createElement('div');
             t.className = 'sp-tooltip';
-            t.textContent = effectivePrompt || '系统提示词为空';
+            if (effectivePrompt) {
+                const label = document.createElement('strong');
+                label.textContent = '系统提示词：';
+                t.appendChild(label);
+                t.appendChild(document.createTextNode(effectivePrompt));
+            } else {
+                t.textContent = '系统提示词为空';
+            }
             btn.appendChild(t);
         }
 
@@ -2782,7 +3392,11 @@
             if (tooltip) tooltip.textContent = isSearchEnabled ? '联网搜索已开启' : '联网搜索已关闭';
         }
         function openSettings() { isListeningShortcut = null; renderShortcutsUI(); document.getElementById('settings-modal').style.display = 'flex'; }
-        function closeSettings() { document.getElementById('settings-modal').style.display = 'none'; }
+        function closeSettings() {
+            document.getElementById('settings-modal').style.display = 'none';
+            const modal = document.querySelector('.modal-content');
+            if (modal) modal.style.height = '';
+        }
 
         function clearAllData() {
             if (confirm("警告：确定要彻底清空所有对话数据吗？\n(API Key 和 自定义模型将被保留)")) {
@@ -2799,7 +3413,12 @@
             dom.contextMenu.innerHTML = '';
             items.forEach(item => {
                 const div = document.createElement('div'); div.className = `context-menu-item ${item.danger ? 'danger' : ''}`; div.innerHTML = item.label;
-                div.onclick = (e) => { e.stopPropagation(); item.action(); dom.contextMenu.style.display = 'none'; };
+                div.onclick = (e) => {
+                    e.stopPropagation();
+                    item.action();
+                    dom.contextMenu.style.display = 'none';
+                    if (!item.noRefocus) setTimeout(() => refocusMessageInputSoft(true), 0);
+                };
                 dom.contextMenu.appendChild(div);
             });
             dom.contextMenu.style.display = 'block';
@@ -2807,6 +3426,56 @@
             if (x + rect.width > window.innerWidth) x -= rect.width;
             if (y + rect.height > window.innerHeight) y -= rect.height;
             dom.contextMenu.style.left = x + 'px'; dom.contextMenu.style.top = y + 'px';
+        }
+
+        function closeConfirmDialog() {
+            const overlay = document.getElementById('confirm-dialog-overlay');
+            if (!overlay || overlay.style.display !== 'flex') return;
+            overlay.style.display = 'none';
+            overlay.onclick = null;
+            const ok = document.getElementById('confirm-dialog-ok');
+            const cancel = document.getElementById('confirm-dialog-cancel');
+            if (ok) ok.onclick = null;
+            if (cancel) cancel.onclick = null;
+            const box = document.getElementById('confirm-dialog-box');
+            const sub = document.getElementById('confirm-dialog-subtitle');
+            if (box) box.classList.remove('has-subtitle');
+            if (sub) { sub.textContent = ''; sub.hidden = true; }
+        }
+
+        /**
+         * options.deleteCount: 显示「n条对话将被删除，此操作无法撤销。」
+         * options.subtitle: 自定义小字（优先于 deleteCount）
+         */
+        function showConfirmDialog(title, onConfirm, options = {}) {
+            dom.contextMenu.style.display = 'none';
+            const overlay = document.getElementById('confirm-dialog-overlay');
+            const titleEl = document.getElementById('confirm-dialog-title');
+            const subEl = document.getElementById('confirm-dialog-subtitle');
+            const box = document.getElementById('confirm-dialog-box');
+            titleEl.textContent = title;
+            let subtext = '';
+            if (options.subtitle) subtext = options.subtitle;
+            else if (options.deleteCount != null && options.deleteCount >= 0) subtext = `${options.deleteCount}条对话将被删除，此操作无法撤销。`;
+            if (subtext && subEl && box) {
+                subEl.textContent = subtext;
+                subEl.hidden = false;
+                box.classList.add('has-subtitle');
+            } else if (subEl && box) {
+                subEl.textContent = '';
+                subEl.hidden = true;
+                box.classList.remove('has-subtitle');
+            }
+            overlay.style.display = 'flex';
+            const ok = document.getElementById('confirm-dialog-ok');
+            const cancel = document.getElementById('confirm-dialog-cancel');
+            ok.onclick = (e) => {
+                e.stopPropagation();
+                closeConfirmDialog();
+                onConfirm();
+            };
+            cancel.onclick = (e) => { e.stopPropagation(); closeConfirmDialog(); };
+            overlay.onclick = (e) => { if (e.target === overlay) closeConfirmDialog(); };
         }
 
         function saveData() {
@@ -2843,6 +3512,16 @@
         }
 
         function switchChat(id) {
+            if (currentChatId === id) {
+                sessionScrollPositions[id] = dom.chatArea.scrollTop;
+                showJumpToBottomHint = false;
+                collapseInput();
+                unreadCompletedChats.delete(id);
+                setTimeout(updateSysPromptBtn, 0);
+                clearMessageInputAmbientCaret();
+                dom.input.focus({ preventScroll: true });
+                return;
+            }
             if (currentChatId) sessionScrollPositions[currentChatId] = dom.chatArea.scrollTop;
             currentChatId = id;
             showJumpToBottomHint = false;
@@ -2854,6 +3533,21 @@
             dom.input.focus({ preventScroll: true });
         }
 
+        function togglePinChat(id) {
+            const chat = chats.find(c => c.id == id);
+            if (!chat) return;
+            chat.pinned = !chat.pinned;
+            normalizeChatOrder();
+            saveData();
+            renderSidebar();
+        }
+
+        function openSingleDeleteConfirmDialog(chat) {
+            showConfirmDialog('确认删除该对话？', () => deleteChat(chat.id), {
+                subtitle: '按住 Cmd 或 Ctrl 点击 × 直接删除，无需确认\n右键对话栏空白处，可打开快速删除菜单。'
+            });
+        }
+
         function deleteChat(id) {
             if (!id) return;
             chats = chats.filter(c => c.id !== id);
@@ -2862,6 +3556,26 @@
             saveData();
             if (chats.length === 0) createNewChat();
             else { syncSelectUIs(); renderSidebar(); renderChatArea(); updateInputUI(); setTimeout(updateSysPromptBtn, 0); }
+        }
+
+        function deleteAllUnpinnedChats() {
+            if (!chats.some(c => !c.pinned)) return;
+            const removeIds = new Set(chats.filter(c => !c.pinned).map(c => c.id));
+            chats = chats.filter(c => c.pinned);
+            removeIds.forEach(id => { unreadCompletedChats.delete(id); delete sessionScrollPositions[id]; });
+            if (currentChatId !== null && removeIds.has(currentChatId)) currentChatId = chats.length ? chats[0].id : null;
+            saveData();
+            if (chats.length === 0) createNewChat();
+            else { syncSelectUIs(); renderSidebar(); renderChatArea(); updateInputUI(); setTimeout(updateSysPromptBtn, 0); }
+        }
+
+        function deleteAllChats() {
+            if (chats.length === 0) return;
+            chats.forEach(c => { unreadCompletedChats.delete(c.id); delete sessionScrollPositions[c.id]; });
+            chats = [];
+            currentChatId = null;
+            saveData();
+            createNewChat();
         }
 
         function branchChat(messageIndex) {
@@ -2878,9 +3592,10 @@
                 model: currentChat.model,
                 history: JSON.parse(JSON.stringify(currentChat.history.slice(0, messageIndex + 1))),
                 queue: [],
-                systemPrompt: typeof currentChat.systemPrompt === 'string' ? currentChat.systemPrompt : ''
+                systemPrompt: typeof currentChat.systemPrompt === 'string' ? currentChat.systemPrompt : '',
+                pinned: false
             };
-            chats.unshift(newChat); currentChatId = newChat.id; saveData(); syncSelectUIs(); renderSidebar(); renderChatArea(); updateInputUI();
+            insertNewChatAfterPinnedSection(newChat); currentChatId = newChat.id; saveData(); syncSelectUIs(); renderSidebar(); renderChatArea(); updateInputUI();
             setTimeout(updateSysPromptBtn, 0);
         }
 
@@ -2893,9 +3608,20 @@
 
         function triggerRename(chatId, titleSpan) {
             const chat = chats.find(c => c.id === chatId); if (!chat) return;
+            let span = titleSpan;
+            if (!span || !span.isConnected) {
+                const row = dom.chatList && dom.chatList.querySelector(`.chat-item[data-id="${chatId}"]`);
+                span = row && row.querySelector('.chat-title-text');
+            }
+            if (!span) return;
+            const row = span.closest('.drag-item');
+            if (row) {
+                row.classList.add('chat-item--renaming');
+                row.draggable = false;
+            }
             const input = document.createElement('input'); input.type = 'text'; input.value = chat.title; input.className = 'rename-input';
             input.onclick = (e) => e.stopPropagation(); input.onmousedown = (e) => e.stopPropagation();
-            titleSpan.replaceWith(input); input.focus(); input.select();
+            span.replaceWith(input); input.focus(); input.select();
             const finishRename = () => { const newTitle = input.value.trim(); if (newTitle && newTitle !== chat.title) { chat.title = newTitle; saveData(); } renderSidebar(); };
             input.addEventListener('blur', finishRename);
             input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); input.blur(); } if (e.key === 'Escape') { input.value = chat.title; input.blur(); } });
@@ -2906,31 +3632,47 @@
             chats.forEach((chat) => {
                 const div = document.createElement('div'); div.className = `chat-item drag-item ${chat.id == currentChatId ? 'active' : ''}`;
                 div.draggable = true; div.dataset.id = chat.id;
+                if (chat.pinned) { div.dataset.pinned = '1'; div.classList.add('pinned'); }
                 const titleWrapper = document.createElement('div'); titleWrapper.className = 'chat-title-wrapper';
                 const statusDot = document.createElement('div'); statusDot.className = 'status-dot';
                 if (abortControllers[chat.id]) statusDot.classList.add('thinking');
                 else if (unreadCompletedChats.has(chat.id)) statusDot.classList.add('unread');
                 const titleSpan = document.createElement('span'); titleSpan.className = 'chat-title-text'; titleSpan.innerText = chat.title;
                 titleWrapper.appendChild(statusDot); titleWrapper.appendChild(titleSpan);
-                const delBtn = document.createElement('button'); delBtn.className = 'delete-chat-btn';
+                const actions = document.createElement('div'); actions.className = 'chat-item-actions';
+                const slot = document.createElement('div'); slot.className = 'chat-action-slot';
+                if (chat.pinned) {
+                    const pinBadge = document.createElement('span'); pinBadge.className = 'chat-pin-badge'; pinBadge.setAttribute('aria-hidden', 'true');
+                    pinBadge.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M16 9V4h1c.55 0 1-.45 1-1s-.45-1-1-1H7c-.55 0-1 .45-1 1s.45 1 1 1h1v5c0 1.66-1.34 3-3 3v2h5.97v7l1 1 1-1v-7H19v-2c-1.66 0-3-1.34-3-3z"/></svg>';
+                    slot.appendChild(pinBadge);
+                }
+                const delBtn = document.createElement('button'); delBtn.className = 'delete-chat-btn'; delBtn.draggable = false;
                 delBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
                 delBtn.title = '删除对话 (Cmd+点击 快速删除)';
                 delBtn.onclick = (e) => {
                     e.stopPropagation();
                     if (e.metaKey || e.ctrlKey) deleteChat(chat.id);
-                    else showContextMenu(e.clientX, e.clientY, [{ label: '🚨 确认删除此对话', danger: true, action: () => deleteChat(chat.id) }]);
+                    else openSingleDeleteConfirmDialog(chat);
                 };
-                div.appendChild(titleWrapper); div.appendChild(delBtn); div.onclick = () => switchChat(chat.id);
-                div.ondblclick = (e) => { e.stopPropagation(); triggerRename(chat.id, titleSpan); };
+                slot.appendChild(delBtn);
+                actions.appendChild(slot);
+                div.appendChild(titleWrapper); div.appendChild(actions); div.onclick = () => switchChat(chat.id);
+                div.ondblclick = (e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    triggerRename(chat.id);
+                };
                 div.oncontextmenu = (e) => {
                     e.preventDefault();
                     showContextMenu(e.clientX, e.clientY, [
-                        { label: '✏️ 重命名', action: () => triggerRename(chat.id, titleSpan) },
-                        { label: '🗑️ 删除对话', danger: true, action: () => deleteChat(chat.id) }
+                        { label: chat.pinned ? '📌 取消置顶' : '📌 置顶对话', action: () => togglePinChat(chat.id) },
+                        { label: '✏️ 重命名', action: () => triggerRename(chat.id), noRefocus: true },
+                        { label: '🗑️ 删除对话', danger: true, action: () => openSingleDeleteConfirmDialog(chat) }
                     ]);
                 };
                 dom.chatList.appendChild(div);
             });
+            requestAnimationFrame(() => requestAnimationFrame(updateSidebarSettingsDividerVisibility));
         }
 
         function renderChatArea() {
@@ -3045,7 +3787,11 @@
                 if (isRawHTML) { msgDiv.innerHTML = text; }
                 else {
                     const escapedText = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-                    msgDiv.innerHTML = escapedText.split(/\n{2,}/).map(str => `<p>${str}</p>`).join('');
+                    let innerHtml = escapedText.split(/\n{2,}/).map(str => `<p>${str}</p>`).join('');
+                    if (longUserMsgAutoCollapse && userMessageExceedsCollapseThreshold(text)) {
+                        innerHtml = `<div class="user-msg-collapsible user-msg-is-collapsed" role="group"><div class="user-msg-collapsible-inner">${innerHtml}</div><span role="button" tabindex="0" class="user-msg-toggle" aria-expanded="false"><svg class="user-msg-toggle-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg><span class="user-msg-toggle-text">展开</span></span></div>`;
+                    }
+                    msgDiv.innerHTML = innerHtml;
                 }
             }
             msgDiv.oncontextmenu = (e) => {
@@ -3062,6 +3808,7 @@
                 showContextMenu(e.clientX, e.clientY, menuItems);
             };
             rowDiv.appendChild(msgDiv); dom.chatArea.appendChild(rowDiv);
+            if (role === 'user' && msgDiv.querySelector('.user-msg-collapsible')) wireUserMsgCollapsible(msgDiv);
             if (queueSolidify && role === 'user' && index >= 0) {
                 const histIdx = index;
                 const onSolidifyEnd = (e) => {
@@ -3170,8 +3917,8 @@
             collapseInput(); dom.input.value = ''; dom.input.style.height = '40px'; updateSendBtnState();
             let targetChat = chats.find(c => c.id === currentChatId);
             if (!targetChat) {
-                targetChat = { id: Date.now(), title: text.substring(0, 15) + (text.length > 15 ? '...' : ''), model: model, history: [], queue: [], systemPrompt: typeof systemPrompt === 'string' ? systemPrompt : '' };
-                chats.unshift(targetChat); currentChatId = targetChat.id;
+                targetChat = { id: Date.now(), title: text.substring(0, 15) + (text.length > 15 ? '...' : ''), model: model, history: [], queue: [], systemPrompt: typeof systemPrompt === 'string' ? systemPrompt : '', pinned: false };
+                insertNewChatAfterPinnedSection(targetChat); currentChatId = targetChat.id;
                 systemPrompt = '';
                 localStorage.setItem('gemini_draft_system_prompt', '');
             }
@@ -3352,7 +4099,7 @@
                     saveData();
                 } else {
                     if (loadingIdx > -1) targetChat.history.splice(loadingIdx, 1);
-                    targetChat.history.push({ role: "model", parts: [{ text: '❌ 请求失败: ' + error.message }] });
+                    targetChat.history.push({ role: "model", parts: [{ text: '请求失败: ' + error.message }] });
                     saveData();
                 }
             } finally {
