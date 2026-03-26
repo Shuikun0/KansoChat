@@ -583,6 +583,23 @@
         .model-item .del-btn:hover { background: none !important; color: var(--text-main) !important; opacity: 1; }
         .model-item button.stream-btn { border: 1px solid transparent; }
         .model-item button.stream-btn.active { background: var(--bg-sidebar-active); color: var(--text-main); border-color: var(--border-color); }
+        .model-item select.thinking-level-select {
+            font-size: 13px;
+            line-height: 1.35;
+            font-family: inherit;
+            padding: 4px 6px;
+            max-width: 118px;
+            min-height: 28px;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+            background: var(--input-bg);
+            color: var(--text-main);
+            cursor: pointer;
+        }
+        .model-item select.thinking-level-select option {
+            font-size: 13px;
+            font-family: inherit;
+        }
         .add-model-row { display: flex; gap: 5px; }
         .add-model-row input { flex: 1; padding: 8px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 13px; background: var(--input-bg); color: var(--text-main); outline: none; }
         .add-model-row button { padding: 0 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-sidebar); cursor: pointer; color: var(--text-main); font-size: 13px; }
@@ -918,6 +935,41 @@
         }
         #search-toggle-btn:hover .sp-tooltip { display: block; }
 
+        #model-pill {
+            position: relative;
+        }
+        #model-pill .model-pill-tooltip {
+            display: none;
+            position: absolute;
+            top: calc(100% + 8px);
+            left: 0;
+            background: var(--bg-main);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+            padding: 8px 12px;
+            font-size: 12px;
+            color: var(--text-muted);
+            white-space: nowrap;
+            z-index: 300;
+            pointer-events: none;
+            text-align: left;
+            line-height: 1.5;
+            min-width: max-content;
+            max-width: min(92vw, 360px);
+            word-break: break-word;
+        }
+        #model-pill:hover .model-pill-tooltip {
+            display: block;
+        }
+
+        /* 任一顶栏菜单/浮层展开时，不显示顶栏按钮悬停提示，避免与面板重叠 */
+        body.header-suppress-hover-tips #model-pill:hover .model-pill-tooltip,
+        body.header-suppress-hover-tips #sysprompt-btn:hover .sp-tooltip,
+        body.header-suppress-hover-tips #search-toggle-btn:hover .sp-tooltip {
+            display: none !important;
+        }
+
         #send-btn-wrap {
             position: relative;
             display: flex;
@@ -951,6 +1003,14 @@
             color: var(--text-muted);
             line-height: 1.5;
             margin: 6px 0 0 0;
+        }
+        .thinking-setting-hint a {
+            color: inherit;
+            text-decoration: underline;
+            text-underline-offset: 2px;
+        }
+        .thinking-setting-hint a:hover {
+            color: var(--text-main);
         }
     </style>
 </head>
@@ -991,6 +1051,7 @@
                         <div id="model-pill" onclick="toggleModelDropdown(event)" style="display:flex;align-items:center;gap:4px;padding:0 8px;height:34px;border-radius:8px;border:none;font-size:13px;font-weight:500;cursor:pointer;user-select:none;background:transparent;color:var(--text-muted);transition:background .2s,color .2s;white-space:nowrap;" onmouseenter="this.style.background='var(--bg-sidebar-hover)';this.style.color='var(--text-main)'" onmouseleave="this.style.background='transparent';this.style.color='var(--text-muted)'">
                             <span id="model-pill-label">Model</span>
                             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                            <div id="model-pill-tooltip" class="model-pill-tooltip sp-tooltip"></div>
                         </div>
                         <div id="model-dropdown" style="display:none;position:absolute;top:calc(100% + 6px);left:0;background:var(--bg-main);border:1px solid var(--border-color);border-radius:10px;box-shadow:0 6px 20px rgba(0,0,0,.12);z-index:200;min-width:260px;width:max-content;max-width:420px;overflow:hidden;"></div>
                         <select id="model-select" style="display:none;"></select>
@@ -1301,9 +1362,10 @@
                     </div>
                     <div class="setting-block" style="margin-top: 10px;">
                         <label>自定义模型列表 & 响应模式 (上下拖拽排序)</label>
+                        <p class="api-key-hint thinking-setting-hint" style="margin: 6px 0 8px;">思考强度：仅对支持 <code>thinkingLevel</code> 的模型（如 Gemini 3 系列）生效；选「默认」则由模型使用接口默认动态策略。详见 <a href="https://ai.google.dev/gemini-api/docs/thinking?hl=zh-cn" target="_blank" rel="noopener noreferrer">Gemini 思考</a>。</p>
                         <div id="settings-model-list" class="model-list"></div>
                         <div class="add-model-row">
-                            <input type="text" id="add-model-input" placeholder="添加模型 (如 gemini-1.5-pro)">
+                            <input type="text" id="add-model-input" placeholder="添加模型 (可重复添加同一模型名以分别配置思考/流式等)">
                             <button onclick="addNewModel()">添加</button>
                         </div>
                     </div>
@@ -1447,9 +1509,61 @@
         const historySteps = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 30, 999];
 
         const defaultModels = ["gemini-3.1-pro-preview", "gemini-3-flash-preview", "gemini-3.1-flash-lite-preview"];
-        let savedModels = JSON.parse(localStorage.getItem('gemini_custom_models')) || [...defaultModels];
-        let globalDefaultModel = localStorage.getItem('gemini_default_model') || "gemini-3.1-flash-lite-preview";
-        let modelConfigs = JSON.parse(localStorage.getItem('gemini_model_configs')) || {};
+
+        function newModelEntryId() {
+            return 'm' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 10);
+        }
+
+        function bootstrapModelsFromStorage() {
+            let raw = null;
+            try { raw = JSON.parse(localStorage.getItem('gemini_custom_models')); } catch (e) {}
+            let modelConfigs = {};
+            try { modelConfigs = JSON.parse(localStorage.getItem('gemini_model_configs')) || {}; } catch (e) {}
+
+            let savedModels;
+            let wrote = false;
+
+            if (!raw || !Array.isArray(raw) || raw.length === 0) {
+                savedModels = defaultModels.map((model, i) => {
+                    const id = newModelEntryId() + '_d' + i;
+                    modelConfigs[id] = { stream: false, alias: '', thinkingLevel: '' };
+                    return { id, model };
+                });
+                wrote = true;
+            } else if (typeof raw[0] === 'string') {
+                const t = Date.now();
+                const oldNames = [...raw];
+                savedModels = raw.map((model, i) => {
+                    const id = 'm_' + t + '_' + i;
+                    const old = modelConfigs[model];
+                    const cfg = (old && typeof old === 'object') ? { ...old } : { stream: false, alias: '', thinkingLevel: '' };
+                    modelConfigs[id] = cfg;
+                    return { id, model };
+                });
+                oldNames.forEach(name => { delete modelConfigs[name]; });
+                wrote = true;
+            } else {
+                savedModels = raw.map((e, i) => {
+                    if (e && e.id && typeof e.model === 'string') return { id: e.id, model: e.model };
+                    return { id: newModelEntryId() + '_fix' + i, model: (e && e.model) ? e.model : String(e) };
+                });
+                savedModels.forEach(e => {
+                    if (!modelConfigs[e.id] || typeof modelConfigs[e.id] !== 'object') {
+                        modelConfigs[e.id] = { stream: false, alias: '', thinkingLevel: '' };
+                        wrote = true;
+                    }
+                });
+            }
+
+            if (wrote) {
+                localStorage.setItem('gemini_custom_models', JSON.stringify(savedModels));
+                localStorage.setItem('gemini_model_configs', JSON.stringify(modelConfigs));
+            }
+            return { savedModels, modelConfigs };
+        }
+
+        let { savedModels, modelConfigs } = bootstrapModelsFromStorage();
+        let globalDefaultModel = localStorage.getItem('gemini_default_model') || '';
 
         // ── 提示词预设 ──────────────────────────────────────────
         let promptPresets = JSON.parse(localStorage.getItem('gemini_prompt_presets')) || [];
@@ -1870,20 +1984,55 @@
 
         // ────────────────────────────────────────────────────────
 
-        function getModelAlias(m) {
-            const cfg = modelConfigs[m];
+        function resolveGeminiModelName(entryId) {
+            const e = savedModels.find(x => x.id === entryId);
+            return e ? e.model : entryId;
+        }
+
+        function isValidModelEntryId(id) {
+            return savedModels.some(e => e.id === id);
+        }
+
+        function getModelAlias(entryId) {
+            const cfg = modelConfigs[entryId];
             if (cfg && cfg.alias && cfg.alias.trim()) return cfg.alias.trim();
-            return m.replace(/^gemini-/i, '').replace(/-preview$/i, '').substring(0, 20);
+            const name = resolveGeminiModelName(entryId);
+            return name.replace(/^gemini-/i, '').replace(/-preview$/i, '').substring(0, 20);
         }
 
         function getCurrentModel() {
             const chat = chats.find(c => c.id == currentChatId);
-            return (chat && chat.model && savedModels.includes(chat.model)) ? chat.model : globalDefaultModel;
+            return (chat && chat.model && isValidModelEntryId(chat.model)) ? chat.model : globalDefaultModel;
+        }
+
+        function updateModelPillTooltip(entryId) {
+            const tip = document.getElementById('model-pill-tooltip');
+            if (!tip) return;
+            const cfg = modelConfigs[entryId];
+            const tl = (cfg && cfg.thinkingLevel) ? String(cfg.thinkingLevel).trim() : '';
+            const validTL = ['minimal', 'low', 'medium', 'high'];
+            const levelStr = tl && validTL.includes(tl) ? tl : 'auto';
+            tip.textContent = 'thinkingLevel: ' + levelStr;
+        }
+
+        function syncHeaderHoverTooltipSuppression() {
+            const dd = document.getElementById('model-dropdown');
+            const modelOpen = dd && dd.style.display === 'block';
+            const sp = document.getElementById('sysprompt-popup');
+            const syspromptOpen = sp && sp.style.display === 'block';
+            const histOpen = dom.historyPopup && dom.historyPopup.classList.contains('active');
+            const searchBar = document.getElementById('search-bar');
+            const searchBarOpen = searchBar && searchBar.classList.contains('active');
+            const searchPanel = document.getElementById('search-panel');
+            const globalSearchOpen = searchPanel && searchPanel.classList.contains('active');
+            const suppress = !!(modelOpen || syspromptOpen || histOpen || searchBarOpen || globalSearchOpen);
+            document.body.classList.toggle('header-suppress-hover-tips', suppress);
         }
 
         function updateModelPill(m) {
             const lbl = document.getElementById('model-pill-label');
             if (lbl) lbl.textContent = getModelAlias(m);
+            updateModelPillTooltip(m);
         }
 
         const defaultShortcuts = { newChat: 'KeyN', expandInput: 'KeyI', sysPromptPopup: 'KeyP', toggleSidebar: 'KeyB', jumpUp: 'ArrowUp', jumpDown: 'ArrowDown', jumpBottom: 'KeyJ', switchPrev: 'ArrowLeft', switchNext: 'ArrowRight' };
@@ -2060,6 +2209,7 @@
             bar.classList.add('active');
             input.focus(); input.select();
             if (input.value.trim()) runInlineSearch(input.value);
+            syncHeaderHoverTooltipSuppression();
         }
 
         function closeSearch() {
@@ -2068,6 +2218,7 @@
             inlineMatches = []; inlineCursor = -1;
             document.getElementById('search-bar-counter').innerText = '';
             refocusMessageInputSoft();
+            syncHeaderHoverTooltipSuppression();
         }
 
         function runInlineSearch(keyword) {
@@ -2141,6 +2292,7 @@
             if (kw) input.value = kw;
             input.focus(); input.select();
             if (input.value.trim()) runGlobalSearch(input.value);
+            syncHeaderHoverTooltipSuppression();
         }
 
         function closeGlobalSearch() {
@@ -2148,6 +2300,7 @@
             searchResultsList = []; searchActiveCursor = -1;
             clearDomHighlights();
             refocusMessageInputSoft();
+            syncHeaderHoverTooltipSuppression();
         }
 
         function handleSearchPanelClick(e) {
@@ -2285,8 +2438,27 @@
         }
         // ─────────────────────────────────────────────────────────
 
+        function migrateGlobalDefaultAndChatModelEntryIds() {
+            if (!savedModels.length) return;
+            if (!globalDefaultModel || !isValidModelEntryId(globalDefaultModel)) {
+                const byName = globalDefaultModel && savedModels.find(e => e.model === globalDefaultModel);
+                globalDefaultModel = byName ? byName.id : savedModels[0].id;
+                localStorage.setItem('gemini_default_model', globalDefaultModel);
+            }
+            let needSaveChats = false;
+            chats.forEach(c => {
+                if (!c.model) { c.model = globalDefaultModel; needSaveChats = true; return; }
+                if (isValidModelEntryId(c.model)) return;
+                const hit = savedModels.find(e => e.model === c.model);
+                c.model = hit ? hit.id : globalDefaultModel;
+                needSaveChats = true;
+            });
+            if (needSaveChats) saveData();
+        }
+
         function init() {
             localStorage.removeItem('gemini_default_preset_id');
+            migrateGlobalDefaultAndChatModelEntryIds();
             let needSaveChats = false;
             chats.forEach(c => {
                 if (!c.queue) c.queue = [];
@@ -2326,6 +2498,7 @@
                 if (e.key === 'Escape') closePresetNameDialog();
             });
             setTimeout(() => tryInitialMessageInputFocus(), 0);
+            syncHeaderHoverTooltipSuppression();
         }
 
         function collapseInput() {
@@ -2435,8 +2608,8 @@
                 }
                 const draggedDataId = type === 'chat' ? draggedElement.dataset.id : draggedElement.dataset.val;
                 let arr = type === 'chat' ? chats : savedModels;
-                const originalDataIndex = arr.findIndex(x => (type === 'chat' ? x.id == draggedDataId : x == draggedDataId));
-                let finalTargetIndex = appendToEnd ? arr.length : arr.findIndex(x => (type === 'chat' ? x.id == targetDataId : x == targetDataId));
+                const originalDataIndex = arr.findIndex(x => (type === 'chat' ? x.id == draggedDataId : x.id == draggedDataId));
+                let finalTargetIndex = appendToEnd ? arr.length : arr.findIndex(x => (type === 'chat' ? x.id == targetDataId : x.id == targetDataId));
                 if (!appendToEnd && finalTargetIndex < 0) return;
                 if (originalDataIndex === finalTargetIndex || (originalDataIndex === finalTargetIndex - 1 && !appendToEnd)) return;
                 const draggedItemData = arr.splice(originalDataIndex, 1)[0];
@@ -2483,19 +2656,23 @@
         function syncSelectUIs() {
             const renderSelect = (selectEl, withIndex) => {
                 selectEl.innerHTML = '';
-                savedModels.forEach((m, index) => {
-                    const opt = document.createElement('option'); opt.value = m;
-                    opt.innerText = withIndex ? `${index + 1}. ${m}` : m;
+                savedModels.forEach((e, index) => {
+                    const opt = document.createElement('option'); opt.value = e.id;
+                    const dup = savedModels.filter(x => x.model === e.model).length > 1;
+                    opt.innerText = dup
+                        ? `${index + 1}. ${e.model}`
+                        : (withIndex ? `${index + 1}. ${e.model}` : `${getModelAlias(e.id)} — ${e.model}`);
                     selectEl.appendChild(opt);
                 });
             };
             renderSelect(dom.modelSelect, false);
             renderSelect(dom.defaultModelSelect, true);
-            if (!savedModels.includes(globalDefaultModel)) globalDefaultModel = savedModels[0];
+            if (!savedModels.length) return;
+            if (!globalDefaultModel || !isValidModelEntryId(globalDefaultModel)) globalDefaultModel = savedModels[0].id;
             dom.defaultModelSelect.value = globalDefaultModel;
             let chat = chats.find(c => c.id == currentChatId);
             let chatModel = (chat && chat.model) ? chat.model : globalDefaultModel;
-            if (!savedModels.includes(chatModel)) chatModel = savedModels[0];
+            if (!isValidModelEntryId(chatModel)) chatModel = savedModels[0].id;
             dom.modelSelect.value = chatModel;
             updateModelPill(chatModel);
         }
@@ -2506,13 +2683,18 @@
             syncSelectUIs();
             const list = document.getElementById('settings-model-list');
             list.innerHTML = '';
-            savedModels.forEach((m, index) => {
-                if (!modelConfigs[m] || typeof modelConfigs[m] !== 'object') modelConfigs[m] = { stream: false, alias: '' };
+            const validThinkingLevels = ['minimal', 'low', 'medium', 'high'];
+            savedModels.forEach((entry, index) => {
+                const m = entry.id;
+                if (!modelConfigs[m] || typeof modelConfigs[m] !== 'object') modelConfigs[m] = { stream: false, alias: '', thinkingLevel: '' };
+                let tl = (modelConfigs[m].thinkingLevel || '').trim();
+                if (tl && !validThinkingLevels.includes(tl)) tl = '';
+                if (tl !== (modelConfigs[m].thinkingLevel || '').trim()) { modelConfigs[m].thinkingLevel = tl; localStorage.setItem('gemini_model_configs', JSON.stringify(modelConfigs)); }
                 const isStream = modelConfigs[m].stream === true;
                 const alias = modelConfigs[m].alias || '';
                 const div = document.createElement('div');
                 div.className = 'model-item drag-item'; div.draggable = true; div.dataset.val = m;
-                const nameSpan = document.createElement('span'); nameSpan.title = m; nameSpan.textContent = (index + 1) + '. ' + m;
+                const nameSpan = document.createElement('span'); nameSpan.title = entry.model + '\n' + entry.id; nameSpan.textContent = (index + 1) + '. ' + entry.model;
                 const actions = document.createElement('div'); actions.className = 'model-actions';
                 const aliasBtn = document.createElement('button');
                 aliasBtn.title = alias ? '简称: ' + alias : '设置简称';
@@ -2538,18 +2720,34 @@
                 toggleTrack.appendChild(toggleThumb);
                 const toggleLabel = document.createElement('span'); toggleLabel.textContent = '流式';
                 streamToggle.appendChild(toggleTrack); streamToggle.appendChild(toggleLabel);
-                streamToggle.onclick = (function(model){ return function(){ toggleModelStream(model); }; })(m);
+                streamToggle.onclick = (function(entryId){ return function(){ toggleModelStream(entryId); }; })(m);
+                const thinkingSel = document.createElement('select');
+                thinkingSel.className = 'thinking-level-select';
+                thinkingSel.title = '思考强度 thinkingLevel（Gemini 3）；默认=不发送该参数';
+                [['', '思考:默认'], ['minimal', 'minimal'], ['low', 'low'], ['medium', 'medium'], ['high', 'high']].forEach(([val, label]) => {
+                    const opt = document.createElement('option');
+                    opt.value = val; opt.textContent = label; if (val === tl) opt.selected = true;
+                    thinkingSel.appendChild(opt);
+                });
+                thinkingSel.onchange = (function(entryId) {
+                    return function() {
+                        if (!modelConfigs[entryId] || typeof modelConfigs[entryId] !== 'object') modelConfigs[entryId] = { stream: false, alias: '', thinkingLevel: '' };
+                        const v = thinkingSel.value.trim();
+                        modelConfigs[entryId].thinkingLevel = v && validThinkingLevels.includes(v) ? v : '';
+                        localStorage.setItem('gemini_model_configs', JSON.stringify(modelConfigs));
+                    };
+                })(m);
                 const delBtn = document.createElement('button');
                 delBtn.className = 'del-btn'; delBtn.title = '删除';
                 delBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
-                delBtn.onclick = (function(model){ return function(e){ e.stopPropagation(); confirmDeleteModel(model, e); }; })(m);
-                actions.appendChild(aliasBtn); actions.appendChild(streamToggle); actions.appendChild(delBtn);
+                delBtn.onclick = (function(entryId){ return function(e){ e.stopPropagation(); confirmDeleteModel(entryId, e); }; })(m);
+                actions.appendChild(aliasBtn); actions.appendChild(thinkingSel); actions.appendChild(streamToggle); actions.appendChild(delBtn);
                 div.appendChild(nameSpan); div.appendChild(actions); list.appendChild(div);
             });
         }
 
         function toggleModelStream(m) {
-            if (!modelConfigs[m] || typeof modelConfigs[m] !== 'object') modelConfigs[m] = { stream: false, alias: '' };
+            if (!modelConfigs[m] || typeof modelConfigs[m] !== 'object') modelConfigs[m] = { stream: false, alias: '', thinkingLevel: '' };
             modelConfigs[m].stream = !modelConfigs[m].stream;
             localStorage.setItem('gemini_model_configs', JSON.stringify(modelConfigs));
             renderSettingsModels();
@@ -2558,17 +2756,39 @@
         function addNewModel() {
             const input = document.getElementById('add-model-input'); if (!input) return;
             const val = input.value.trim(); if (!val) return;
-            if (savedModels.includes(val)) { input.select(); return; }
-            savedModels.push(val);
+            const id = newModelEntryId();
+            savedModels.push({ id, model: val });
+            modelConfigs[id] = { stream: false, alias: '', thinkingLevel: '' };
             localStorage.setItem('gemini_custom_models', JSON.stringify(savedModels));
+            localStorage.setItem('gemini_model_configs', JSON.stringify(modelConfigs));
+            input.value = '';
             renderSettingsModels();
         }
 
-        function confirmDeleteModel(m, e) {
+        function reassignChatsAfterModelEntryDeleted(deletedId) {
+            const remain = savedModels[0];
+            if (!remain) return;
+            const fallback = remain.id;
+            let needSave = false;
+            chats.forEach(c => {
+                if (c.model === deletedId) { c.model = fallback; needSave = true; }
+            });
+            if (globalDefaultModel === deletedId) {
+                globalDefaultModel = fallback;
+                localStorage.setItem('gemini_default_model', globalDefaultModel);
+            }
+            if (needSave) saveData();
+        }
+
+        function confirmDeleteModel(entryId, e) {
             if (savedModels.length <= 1) return alert('至少保留一个模型！');
-            showContextMenu(e.clientX, e.clientY, [{ label: '确认删除 ' + m, danger: true, action: () => {
-                savedModels = savedModels.filter(x => x !== m);
+            const label = resolveGeminiModelName(entryId);
+            showContextMenu(e.clientX, e.clientY, [{ label: '确认删除 ' + label, danger: true, action: () => {
+                savedModels = savedModels.filter(x => x.id !== entryId);
+                delete modelConfigs[entryId];
                 localStorage.setItem('gemini_custom_models', JSON.stringify(savedModels));
+                localStorage.setItem('gemini_model_configs', JSON.stringify(modelConfigs));
+                reassignChatsAfterModelEntryDeleted(entryId);
                 renderSettingsModels(); syncSelectUIs();
             }}]);
         }
@@ -2676,6 +2896,7 @@
             const wasActive = dom.historyPopup.classList.contains('active');
             dom.historyPopup.classList.toggle('active');
             if (wasActive && !dom.historyPopup.classList.contains('active')) refocusMessageInputSoft();
+            syncHeaderHoverTooltipSuppression();
         }
 
         window.handleSliderChange = function (sliderIndex) { setHistoryLimit(historySteps[sliderIndex]); };
@@ -3189,11 +3410,11 @@
                     if (e.code.startsWith('Digit')) {
                         const modelIndex = parseInt(e.code.replace('Digit', '')) - 1;
                         if (modelIndex >= 0 && modelIndex < savedModels.length) {
-                            const m = savedModels[modelIndex];
-                            dom.modelSelect.value = m;
+                            const entry = savedModels[modelIndex];
+                            dom.modelSelect.value = entry.id;
                             let chat = chats.find(c => c.id == currentChatId);
-                            if (chat) { chat.model = m; saveData(); }
-                            updateModelPill(m);
+                            if (chat) { chat.model = entry.id; saveData(); }
+                            updateModelPill(entry.id);
                         }
                     }
                 }
@@ -3233,6 +3454,7 @@
                         refocusMessageInputSoft();
                     }
                 }
+                syncHeaderHoverTooltipSuppression();
             });
 
             document.addEventListener('scroll', () => {
@@ -3240,6 +3462,7 @@
                 if (dom.historyPopup.classList.contains('active')) {
                     dom.historyPopup.classList.remove('active');
                     refocusMessageInputSoft();
+                    syncHeaderHoverTooltipSuppression();
                 }
             }, true);
 
@@ -3320,6 +3543,7 @@
             } else {
                 refocusMessageInputSoft();
             }
+            syncHeaderHoverTooltipSuppression();
         }
 
         function toggleSysPromptPopup(e) {
@@ -3345,6 +3569,7 @@
             popup.style.display = 'block';
             btn.classList.add('popup-open');
             ta.focus();
+            syncHeaderHoverTooltipSuppression();
         }
 
         function clearSysPrompt() {
@@ -3354,6 +3579,7 @@
             document.getElementById('sysprompt-popup').style.display = 'none';
             document.getElementById('sysprompt-btn').classList.remove('popup-open');
             refocusMessageInputSoft();
+            syncHeaderHoverTooltipSuppression();
         }
 
         const _sysPromptBtnOrigHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><g transform="scale(-1,1) translate(-24,0)"><path d="M15 4V2"/><path d="M15 16v-2"/><path d="M8 9h2"/><path d="M20 9h2"/><path d="M17.8 11.8 19 13"/><path d="M15 9h.01"/><path d="M17.8 6.2 19 5"/><path d="m3 21 9-9"/><path d="M12.2 6.2 11 5"/></g></svg>';
@@ -3887,20 +4113,21 @@
             e.stopPropagation();
             const dd = document.getElementById('model-dropdown');
             const isOpen = dd.style.display === 'block';
-            if (isOpen) { dd.style.display = 'none'; refocusMessageInputSoft(); return; }
+            if (isOpen) { dd.style.display = 'none'; refocusMessageInputSoft(); syncHeaderHoverTooltipSuppression(); return; }
             dd.innerHTML = '';
             const cur = getCurrentModel();
-            savedModels.forEach(m => {
+            savedModels.forEach(e => {
                 const item = document.createElement('div');
-                const active = m === cur;
+                const active = e.id === cur;
                 item.style.cssText = 'padding:8px 14px;font-size:13px;cursor:pointer;color:var(--text-main);display:flex;flex-direction:column;gap:1px;background:' + (active ? 'var(--bg-sidebar-active)' : 'transparent') + ';';
-                item.innerHTML = '<span style="font-weight:' + (active ? '600' : '400') + ';">' + getModelAlias(m) + '</span><span style="font-size:11px;color:var(--text-muted);font-family:monospace;">' + m + '</span>';
+                item.innerHTML = '<span style="font-weight:' + (active ? '600' : '400') + ';">' + getModelAlias(e.id) + '</span><span style="font-size:11px;color:var(--text-muted);font-family:monospace;">' + e.model + '</span>';
                 item.onmouseenter = () => { item.style.background = 'var(--bg-sidebar-hover)'; };
                 item.onmouseleave = () => { item.style.background = active ? 'var(--bg-sidebar-active)' : 'transparent'; };
-                item.onclick = () => { dom.modelSelect.value = m; let chat = chats.find(c => c.id == currentChatId); if (chat) { chat.model = m; saveData(); } updateModelPill(m); dd.style.display = 'none'; refocusMessageInputSoft(); };
+                item.onclick = () => { dom.modelSelect.value = e.id; let chat = chats.find(c => c.id == currentChatId); if (chat) { chat.model = e.id; saveData(); } updateModelPill(e.id); dd.style.display = 'none'; refocusMessageInputSoft(); syncHeaderHoverTooltipSuppression(); };
                 dd.appendChild(item);
             });
             dd.style.display = 'block';
+            syncHeaderHoverTooltipSuppression();
         }
 
         function setModelAlias(m, val) {
@@ -4004,15 +4231,23 @@
             const requestBody = { contents: apiContents };
             if (spTrim) requestBody.systemInstruction = { parts: [{ text: spTrim }] };
             if (isSearchEnabled) requestBody.tools = [{ googleSearch: {} }];
+            const entryId = model;
+            const apiModelName = encodeURIComponent(resolveGeminiModelName(entryId));
+            const tlRaw = modelConfigs[entryId] && typeof modelConfigs[entryId] === 'object' ? (modelConfigs[entryId].thinkingLevel || '').trim() : '';
+            const validTL = ['minimal', 'low', 'medium', 'high'];
+            if (tlRaw && validTL.includes(tlRaw)) {
+                requestBody.generationConfig = requestBody.generationConfig || {};
+                requestBody.generationConfig.thinkingConfig = { thinkingLevel: tlRaw };
+            }
 
             abortControllers[targetChat.id] = new AbortController();
             if (currentChatId === targetChat.id) updateInputUI();
             renderSidebar();
 
-            const isStream = modelConfigs[model] && typeof modelConfigs[model] === 'object' ? modelConfigs[model].stream === true : false;
+            const isStream = modelConfigs[entryId] && typeof modelConfigs[entryId] === 'object' ? modelConfigs[entryId].stream === true : false;
             const requestUrl = isStream
-                ? `https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?alt=sse&key=${apiKey}`
-                : `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+                ? `https://generativelanguage.googleapis.com/v1beta/models/${apiModelName}:streamGenerateContent?alt=sse&key=${apiKey}`
+                : `https://generativelanguage.googleapis.com/v1beta/models/${apiModelName}:generateContent?key=${apiKey}`;
 
             try {
                 const response = await fetch(requestUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(requestBody), signal: abortControllers[targetChat.id].signal });
