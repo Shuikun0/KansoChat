@@ -1199,6 +1199,7 @@
 
             :root {
                 --header-height: var(--mobile-header-h);
+                /* JS syncMobileInputLayoutHeight 会覆盖；此处为首帧占位 */
                 --input-height: 118px;
             }
 
@@ -3021,6 +3022,14 @@
             if (typeof ResizeObserver !== 'undefined' && dom.chatList) {
                 new ResizeObserver(updateSidebarSettingsDividerVisibility).observe(dom.chatList);
             }
+            if (typeof ResizeObserver !== 'undefined') {
+                const inputContainer = document.getElementById('input-container');
+                if (inputContainer) {
+                    new ResizeObserver(() => {
+                        if (typeof syncMobileInputLayoutHeight === 'function') syncMobileInputLayoutHeight();
+                    }).observe(inputContainer);
+                }
+            }
             window.addEventListener('resize', updateSidebarSettingsDividerVisibility);
             window.addEventListener('resize', syncMobileDrawerBackdrop);
             window.addEventListener('resize', () => {
@@ -3028,6 +3037,7 @@
                 syncKeyboardInsetFromViewport();
             });
             attachMobileKeyboardInset();
+            if (typeof syncMobileInputLayoutHeight === 'function') requestAnimationFrame(() => syncMobileInputLayoutHeight());
             // 初始化预设 UI
             renderPopupPresets();
             renderSettingsPromptTab();
@@ -3049,6 +3059,7 @@
             dom.input.classList.remove('expanded');
             dom.input.style.height = '40px';
             if (dom.input.value) dom.input.style.height = dom.input.scrollHeight + 'px';
+            if (typeof syncMobileInputLayoutHeight === 'function') requestAnimationFrame(() => syncMobileInputLayoutHeight());
         }
 
         function switchTab(tabId) {
@@ -3827,6 +3838,7 @@
                 if (Date.now() - altShortcutFiredAt < 50) { document.execCommand('undo'); return; }
                 if (!this.classList.contains('expanded')) { this.style.height = '40px'; this.style.height = (this.scrollHeight) + 'px'; }
                 updateSendBtnState();
+                if (typeof syncMobileInputLayoutHeight === 'function') requestAnimationFrame(() => syncMobileInputLayoutHeight());
             });
             dom.input.addEventListener('focus', () => {
                 if (typeof isMobileLayout !== 'function' || !isMobileLayout()) return;
@@ -4138,19 +4150,56 @@
             }
         }
 
+        /**
+         * 主区底部留给输入条的高度（不含 keyboard-inset）。
+         * 须与 #input-container 实际占位一致：固定 118px 会与多行输入/待发送图条（absolute 伸出）错位，
+         * 导致 z-index:100 的底栏「压」住聊天内容。
+         */
+        function syncMobileInputLayoutHeight() {
+            if (!isMobileLayout()) {
+                document.documentElement.style.removeProperty('--input-height');
+                return;
+            }
+            const main = document.getElementById('main');
+            const ic = document.getElementById('input-container');
+            if (!main || !ic) return;
+            const pending = document.getElementById('pending-imgs-bar');
+            const icr = ic.getBoundingClientRect();
+            let stackTop = icr.top;
+            if (pending && pending.isConnected && pending.offsetParent !== null) {
+                stackTop = Math.min(stackTop, pending.getBoundingClientRect().top);
+            }
+            const mainBottom = main.getBoundingClientRect().bottom;
+            const D = Math.max(0, mainBottom - stackTop);
+            const kbdStr = document.documentElement.style.getPropertyValue('--keyboard-inset').trim();
+            const kbdPx = parseFloat(kbdStr) || 0;
+            const h = Math.max(0, Math.ceil(D - kbdPx));
+            document.documentElement.style.setProperty('--input-height', h + 'px');
+        }
+
         function syncKeyboardInsetFromViewport() {
-            if (!window.visualViewport) return;
+            if (!window.visualViewport) {
+                if (typeof syncMobileInputLayoutHeight === 'function') syncMobileInputLayoutHeight();
+                return;
+            }
             if (!window.matchMedia('(max-width: 768px)').matches) {
                 document.documentElement.style.setProperty('--keyboard-inset', '0px');
+                if (typeof syncMobileInputLayoutHeight === 'function') syncMobileInputLayoutHeight();
                 return;
             }
             const vv = window.visualViewport;
             const inset = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
             document.documentElement.style.setProperty('--keyboard-inset', inset + 'px');
+            requestAnimationFrame(() => {
+                if (typeof syncMobileInputLayoutHeight === 'function') syncMobileInputLayoutHeight();
+            });
         }
 
         function attachMobileKeyboardInset() {
-            if (!window.visualViewport) return;
+            if (!window.visualViewport) {
+                syncMobileInputLayoutHeight();
+                return;
+            }
             const vv = window.visualViewport;
             const sync = () => syncKeyboardInsetFromViewport();
             vv.addEventListener('resize', sync);
@@ -4750,7 +4799,11 @@
             if (!wrapper) return;
             if (!bar) { bar = document.createElement('div'); bar.id = 'pending-imgs-bar'; wrapper.appendChild(bar); }
             bar.innerHTML = '';
-            if (!pendingImgs.length) { bar.remove(); return; }
+            if (!pendingImgs.length) {
+                bar.remove();
+                if (typeof syncMobileInputLayoutHeight === 'function') requestAnimationFrame(() => syncMobileInputLayoutHeight());
+                return;
+            }
             pendingImgs.forEach((img, i) => {
                 const chip = document.createElement('span'); chip.className = 'att-chip';
                 chip.innerHTML = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;opacity:0.45"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>' + '<span>' + img.name + '</span>' + '<div class="att-preview"><img src="data:' + img.mime + ';base64,' + img.b64 + '"></div>' + '<span class="att-del" onclick="event.stopPropagation();pendingImgs.splice(' + i + ',1);renderPendingImgs()">✕</span>';
@@ -4765,6 +4818,7 @@
                 bar.appendChild(chip);
             });
             updateSendBtnState();
+            if (typeof syncMobileInputLayoutHeight === 'function') requestAnimationFrame(() => syncMobileInputLayoutHeight());
         }
 
         function openLightbox(src) {
