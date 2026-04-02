@@ -1265,17 +1265,25 @@
                 display: none !important;
             }
 
+            /* 纵向滚动条不占横向宽度、默认不显示；仍可正常滑动 */
             #chat-area {
                 padding: 12px calc(14px + env(safe-area-inset-right, 0px)) 12px calc(14px + env(safe-area-inset-left, 0px));
                 gap: 14px;
                 padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
                 bottom: calc(var(--input-height) + var(--keyboard-inset, 0px));
+                scrollbar-width: none;
+                -ms-overflow-style: none;
+            }
+            #chat-area::-webkit-scrollbar {
+                width: 0;
+                height: 0;
             }
 
             #input-container {
                 padding: 8px calc(12px + env(safe-area-inset-right, 0px)) calc(12px + env(safe-area-inset-bottom, 0px)) calc(12px + env(safe-area-inset-left, 0px));
                 bottom: var(--keyboard-inset, 0px);
-                transition: bottom 0.2s ease;
+                /* bottom 勿加 transition：keyboard-inset 随 visualViewport 连续变化，插值会滞后于键盘 */
+                transition: background-color 0.3s, backdrop-filter 0.3s;
             }
             .input-box-wrapper { max-width: none; }
             #message-input,
