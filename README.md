@@ -35,7 +35,7 @@ KansoChat 是一款为深度交流设计的纯前端 AI 对话面板。从支持
 
 ### 🤖 多模型支持
 
-* **多提供商接入**：支持 ** Gemini（Google） / ChatGPT（OpenAI）/ Claude（Anthropic）/ Grok（xAI）**，可按需配置对应 API Key 并切换模型。
+* **多提供商接入**：支持 **Google Gemini / ChatGPT（OpenAI）/ Claude（Anthropic）/ Grok（xAI）**，可按需配置对应 API Key 并切换模型。
 
 ### ⌨️ 快捷键流 · Hotkeys
 
@@ -60,4 +60,5 @@ KansoChat 是一款为深度交流设计的纯前端 AI 对话面板。从支持
 <br />
 
 > 日语词语 Kanso (簡素)，指通过剔除冗余、回归本质，来展现事物简约而纯粹的自然之美 🍃
-
+>
+> 本项目保持克制与轻量，当前已支持 Google Gemini、ChatGPT（OpenAI）、Claude（Anthropic）与 Grok（xAI）API
