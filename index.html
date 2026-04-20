@@ -105,44 +105,36 @@
         }
         .btn-base:hover { background-color: var(--bg-sidebar-hover); }
 
-        /* 负 margin 把滚动条推向侧栏右缘（靠近与主区交界）；内边距给列表内容与滑轨留缝，避免压住删除按钮 */
+        /* 侧栏列表使用悬浮滚动条：不预留宽度，不因滚动条显隐挤压布局 */
         #chat-list {
             flex: 1;
             margin-top: 15px;
-            margin-right: -8px;
-            padding-right: 8px;
+            margin-right: 0;
+            padding-right: 0;
             display: flex;
             flex-direction: column;
             gap: 5px;
             overflow-y: auto;
             overflow-y: overlay;
+            overflow-x: hidden;
             overscroll-behavior-y: contain;
+            scrollbar-gutter: auto;
             scrollbar-width: none;
             -ms-overflow-style: none;
-        }
-        #chat-list.chat-list-scrollbar-visible {
-            scrollbar-width: thin;
-            scrollbar-color: rgba(128, 128, 128, 0.25) transparent;
         }
         #chat-list::-webkit-scrollbar {
             width: 0;
             height: 0;
-        }
-        #chat-list.chat-list-scrollbar-visible::-webkit-scrollbar {
-            width: 14px;
         }
         #chat-list::-webkit-scrollbar-track {
             background: transparent;
         }
         /* 与主聊天区 ::-webkit-scrollbar-thumb 一致 */
         #chat-list::-webkit-scrollbar-thumb {
-            background-color: rgba(128, 128, 128, 0.25);
+            background-color: transparent;
             border-radius: 10px;
             border: 4px solid transparent;
             background-clip: padding-box;
-        }
-        #chat-list::-webkit-scrollbar-thumb:hover {
-            background-color: rgba(128, 128, 128, 0.45);
         }
 
         .drag-item {
@@ -154,6 +146,7 @@
         .drag-item:hover { background-color: var(--bg-sidebar-hover); }
         .drag-item.active { background-color: var(--bg-sidebar-active); font-weight: 500; }
         .drag-item.dragging { opacity: 0.4; background-color: var(--bg-sidebar-active); cursor: grabbing; }
+        body.sidebar-titles-dim #chat-list .drag-item:not(.active) .chat-title-text { opacity: 0.65; }
         .drop-line-top { box-shadow: inset 0 2px 0 var(--msg-user) !important; z-index: 10; border-top-left-radius: 0; border-top-right-radius: 0; }
         .drop-line-bottom { box-shadow: inset 0 -2px 0 var(--msg-user) !important; z-index: 10; border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
 
@@ -315,9 +308,22 @@
             box-shadow: var(--shadow-panel);
             transition: background-color 0.15s;
         }
+        .jump-to-bottom-icon {
+            width: 18px;
+            height: 18px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            transition: transform 0.15s ease, color 0.15s ease;
+        }
 
         #jump-to-bottom-btn:hover {
             background: var(--bg-sidebar-hover);
+        }
+        #jump-to-bottom-btn:hover .jump-to-bottom-icon {
+            color: var(--text-main);
+            transform: none;
         }
 
         #input-container {
@@ -375,6 +381,39 @@
         .message a::after { content: none; }
         .message.bot { background-color: var(--msg-bot); color: var(--text-main); border-bottom-left-radius: 2px; }
         .message.user { background-color: var(--msg-user); color: var(--msg-user-text); border-bottom-right-radius: 2px; transition: background-color 0.3s; white-space: pre-wrap; word-wrap: break-word; }
+        .reply-prefix-label {
+            font-weight: 400;
+            opacity: 0.48;
+            line-height: 1.4;
+        }
+        .reply-prefix-label.reply-prefix-top { margin-bottom: 2px; }
+        .reply-prefix-label.reply-prefix-bottom { margin-top: 4px; }
+        .reply-prefix-label.reply-prefix-hover {
+            position: absolute;
+            left: 4px;
+            bottom: calc(100% + 3px);
+            transform: none;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            font-size: 11px;
+            z-index: 2;
+        }
+        .message.bot { position: relative; overflow: visible; }
+        .message-row.bot:hover .reply-prefix-label.reply-prefix-hover {
+            opacity: 0.42;
+        }
+        .reply-prefix-label.reply-prefix-float {
+            position: absolute;
+            left: 4px;
+            bottom: calc(100% + 3px);
+            transform: none;
+            white-space: nowrap;
+            pointer-events: none;
+            font-size: 11px;
+            opacity: 0.42;
+            z-index: 2;
+        }
 
         /* 队列中：Material 式斜向高光扫过（骨架屏 / 占位内容经典动画） */
         @keyframes queuedMdShimmer {
@@ -594,6 +633,30 @@
         .settings-advanced-details[open] > summary::before {
             transform: rotate(90deg);
         }
+        .settings-advanced-layout { margin-top: 10px; display: flex; flex-direction: column; gap: 10px; }
+        .settings-advanced-group {
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 12px;
+            background: var(--input-bg);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .settings-advanced-group-title {
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            color: var(--text-main);
+            opacity: 0.85;
+            margin: 0;
+        }
+        .settings-advanced-group-desc {
+            font-size: 12px;
+            color: var(--text-muted);
+            line-height: 1.45;
+            margin: -4px 0 2px;
+        }
         .segment-group { display: flex; background: var(--input-bg); border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden; }
         .segment-btn { flex: 1; padding: 8px 0; border: none; background: transparent; color: var(--text-muted); cursor: pointer; font-size: 13px; transition: 0.2s; }
         .segment-btn.active { background: var(--bg-sidebar-active); color: var(--text-main); font-weight: 600; }
@@ -653,6 +716,26 @@
         .api-key-wrapper input { flex: 1; padding: 10px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--input-bg); color: var(--text-main); outline: none; font-size: 14px; margin: 0; }
         .api-key-wrapper .icon-btn { border: 1px solid var(--border-color); background: var(--input-bg); }
         .api-key-wrapper .icon-btn:hover { background: var(--bg-sidebar-hover); }
+        .api-key-card {
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            background: var(--input-bg);
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .api-key-card-item {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .api-key-card-item label {
+            font-size: 12px;
+            color: var(--text-muted);
+            font-weight: 600;
+            letter-spacing: 0.01em;
+        }
         .modal-btn { padding: 10px; border-radius: 8px; cursor: pointer; font-size: 14px; border: 1px solid var(--border-color); background: var(--bg-sidebar); color: var(--text-main); transition: 0.2s; width: 100%; }
         .modal-btn:hover { background: var(--bg-sidebar-hover); }
 
@@ -1202,7 +1285,11 @@
 
             <div id="jump-to-bottom-wrap" aria-hidden="true">
                 <button id="jump-to-bottom-btn" type="button" onclick="jumpToBottomNow()" title="跳到底部">
-                    <span style="font-size: 16px; line-height: 1;">↓</span>
+                    <span class="jump-to-bottom-icon" aria-hidden="true">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                            <path d="M6.5 10.5L12 16L17.5 10.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></path>
+                        </svg>
+                    </span>
                     到底部
                 </button>
             </div>
@@ -1309,6 +1396,18 @@
                                 onkeydown="handleCustomHexKey(event)"/>
                         </div>
                     </div>
+                    <div class="setting-block" style="margin-top: 15px;">
+                        <label style="display:flex; flex-direction: column; gap: 4px;">
+                            侧栏非当前对话标题微暗化
+                            <span style="font-size: 12px; color: var(--text-muted); font-weight: normal; line-height: 1.4;">
+                                开启后：左侧对话列表中，除当前对话外的标题文字会稍微暗淡，减少视觉干扰。
+                            </span>
+                        </label>
+                        <div class="segment-group" style="margin-top: 8px;">
+                            <button type="button" class="segment-btn" data-sidebar-title-dim-val="true" onclick="setSidebarTitleDim(true)">开启</button>
+                            <button type="button" class="segment-btn active" data-sidebar-title-dim-val="false" onclick="setSidebarTitleDim(false)">关闭</button>
+                        </div>
+                    </div>
                 </div>
 
                 <div id="tab-functions" class="settings-pane">
@@ -1361,46 +1460,79 @@
                             <button type="button" class="segment-btn" data-title-naming-mode="last" onclick="setTitleNamingMode('last')">末位提问</button>
                         </div>
                     </div>
-
                     <details class="settings-advanced-details">
                         <summary>高级设置</summary>
-                        <div class="setting-block" style="margin-top: 10px;">
-                            <label>内容折叠</label>
-                            <div style="display: flex; flex-direction: column; gap: 14px; margin-top: 10px;">
-                                <div>
-                                    <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 6px;">长代码块默认状态</div>
+                        <div class="settings-advanced-layout">
+                            <section class="settings-advanced-group">
+                                <h4 class="settings-advanced-group-title">回复标注</h4>
+                                <p class="settings-advanced-group-desc">控制回答气泡中的附加信息展示，不影响正文内容。</p>
+                                <div class="setting-block">
+                                    <label>回复前缀显示方式</label>
+                                    <div class="segment-group">
+                                        <button type="button" class="segment-btn active" data-reply-prefix-mode="top" onclick="setReplyPrefixDisplayMode('top')">首行</button>
+                                        <button type="button" class="segment-btn" data-reply-prefix-mode="bottom" onclick="setReplyPrefixDisplayMode('bottom')">末行</button>
+                                        <button type="button" class="segment-btn" data-reply-prefix-mode="hover" onclick="setReplyPrefixDisplayMode('hover')">悬浮浮窗</button>
+                                        <button type="button" class="segment-btn" data-reply-prefix-mode="float" onclick="setReplyPrefixDisplayMode('float')">浮窗常显</button>
+                                    </div>
+                                </div>
+                                <div class="setting-block" id="setting-reply-prefix-sys">
+                                    <label>回复前缀显示系统提示词标签</label>
+                                    <div class="segment-group">
+                                        <button type="button" class="segment-btn active" data-sp-label-mode="full" onclick="setSystemPromptLabelInReplyMode('full')">emoji+文本</button>
+                                        <button type="button" class="segment-btn" data-sp-label-mode="emoji" onclick="setSystemPromptLabelInReplyMode('emoji')">仅emoji</button>
+                                        <button type="button" class="segment-btn" data-sp-label-mode="text" onclick="setSystemPromptLabelInReplyMode('text')">仅文本</button>
+                                        <button type="button" class="segment-btn" data-sp-label-mode="off" onclick="setSystemPromptLabelInReplyMode('off')">关闭</button>
+                                    </div>
+                                </div>
+                                <div class="setting-block" id="setting-reply-prefix-model">
+                                    <label>回复前缀显示模型</label>
+                                    <div class="segment-group">
+                                        <button type="button" class="segment-btn" data-reply-model-alias-val="true" onclick="setReplyModelAliasLabel(true)">开启</button>
+                                        <button type="button" class="segment-btn active" data-reply-model-alias-val="false" onclick="setReplyModelAliasLabel(false)">关闭</button>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <section class="settings-advanced-group">
+                                <h4 class="settings-advanced-group-title">内容渲染</h4>
+                                <div class="setting-block">
+                                    <label>长代码块默认状态</label>
                                     <div class="segment-group">
                                         <button class="segment-btn active" data-collapse-val="true" onclick="setCodeCollapse(true)">默认折叠 (截取首尾)</button>
                                         <button class="segment-btn" data-collapse-val="false" onclick="setCodeCollapse(false)">默认全部展开</button>
                                     </div>
                                 </div>
-                                <div>
-                                    <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 6px;">长问题自动折叠（超过 1500 字节）</div>
+                                <div class="setting-block">
+                                    <label>长问题自动折叠（超过 1500 字节）</label>
                                     <div class="segment-group">
                                         <button class="segment-btn active" data-long-user-msg-val="true" onclick="setLongUserMsgCollapse(true)">开启</button>
                                         <button class="segment-btn" data-long-user-msg-val="false" onclick="setLongUserMsgCollapse(false)">关闭</button>
                                     </div>
                                 </div>
-                            </div>
-                        </div>
-                        <div class="setting-block" style="margin-top: 15px;">
-                            <label>预估 Token 消耗提示 (仅在"思考中"微弱显示)</label>
-                            <div class="segment-group" style="margin-bottom: 5px;">
-                                <button class="segment-btn active" data-token-val="true" onclick="setTokenEstimate(true)">开启提示</button>
-                                <button class="segment-btn" data-token-val="false" onclick="setTokenEstimate(false)">关闭</button>
-                            </div>
-                        </div>
-                        <div class="setting-block" style="margin-top: 15px;">
-                            <label style="display:flex; flex-direction: column; gap: 4px;">
-                                发送/接受消息时自动下拉到底部
-                                <span style="font-size: 12px; color: var(--text-muted); font-weight: normal; line-height: 1.4;">
-                                    关闭后：消息更新时不会自动滚动，只在底部显示「到底部」按钮
-                                </span>
-                            </label>
-                            <div class="segment-group" style="margin-bottom: 10px;">
-                                <button class="segment-btn active" data-autoscroll-val="true" onclick="setAutoScrollBottom(true)">开启</button>
-                                <button class="segment-btn" data-autoscroll-val="false" onclick="setAutoScrollBottom(false)">关闭</button>
-                            </div>
+                            </section>
+
+                            <section class="settings-advanced-group">
+                                <h4 class="settings-advanced-group-title">交互行为</h4>
+                                <div class="setting-block">
+                                    <label>预估 Token 消耗提示（仅在思考中微弱显示）</label>
+                                    <div class="segment-group">
+                                        <button class="segment-btn active" data-token-val="true" onclick="setTokenEstimate(true)">开启提示</button>
+                                        <button class="segment-btn" data-token-val="false" onclick="setTokenEstimate(false)">关闭</button>
+                                    </div>
+                                </div>
+                                <div class="setting-block">
+                                    <label style="display:flex; flex-direction: column; gap: 4px;">
+                                        发送/接受消息时自动下拉到底部
+                                        <span style="font-size: 12px; color: var(--text-muted); font-weight: normal; line-height: 1.4;">
+                                            关闭后：消息更新时不会自动滚动，只在底部显示「到底部」按钮。
+                                        </span>
+                                    </label>
+                                    <div class="segment-group">
+                                        <button class="segment-btn active" data-autoscroll-val="true" onclick="setAutoScrollBottom(true)">开启</button>
+                                        <button class="segment-btn" data-autoscroll-val="false" onclick="setAutoScrollBottom(false)">关闭</button>
+                                    </div>
+                                </div>
+                            </section>
                         </div>
                     </details>
                 </div>
@@ -1416,6 +1548,12 @@
                         <p class="api-key-hint thinking-setting-hint" style="margin: 6px 0 8px;">思考强度：仅对支持 <code>thinkingLevel</code> 的模型（如 Gemini 3 系列）生效；选「默认」则由模型使用接口默认动态策略。详见 <a href="https://ai.google.dev/gemini-api/docs/thinking?hl=zh-cn" target="_blank" rel="noopener noreferrer">Gemini 思考</a>。</p>
                         <div id="settings-model-list" class="model-list"></div>
                         <div class="add-model-row">
+                            <select id="add-model-provider" style="max-width: 150px;">
+                                <option value="gemini">Gemini</option>
+                                <option value="openai">ChatGPT</option>
+                                <option value="anthropic">Claude</option>
+                                <option value="xai">Grok</option>
+                            </select>
                             <input type="text" id="add-model-input" placeholder="添加模型 (可重复添加同一模型名以分别配置思考/流式等)">
                             <button onclick="addNewModel()">添加</button>
                         </div>
@@ -1468,21 +1606,80 @@
                 <div id="tab-system" class="settings-pane">
                     <h3>系统与数据</h3>
                     <div class="setting-block">
-                        <label>Google Gemini API Key</label>
-                        <div class="api-key-wrapper">
-                            <input type="password" id="api-key" placeholder="在此填入您的 API Key" autocomplete="off" spellcheck="false">
-                            <button class="icon-btn" onclick="toggleApiKey()" title="显示/隐藏密码">
-                                <svg id="eye-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                                    <circle cx="12" cy="12" r="3"></circle>
-                                </svg>
-                            </button>
-                            <button class="icon-btn" onclick="copyApiKey(event)" title="复制 API Key">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                                </svg>
-                            </button>
+                        <label>API Keys</label>
+                        <div class="api-key-card">
+                            <div class="api-key-card-item">
+                                <label>Gemini</label>
+                                <div class="api-key-wrapper">
+                                    <input type="password" id="api-key-gemini" placeholder="在此填入 Gemini API Key" autocomplete="off" spellcheck="false">
+                                    <button class="icon-btn" onclick="toggleApiKey('api-key-gemini','eye-icon-gemini')" title="显示/隐藏密码">
+                                        <svg id="eye-icon-gemini" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                            <circle cx="12" cy="12" r="3"></circle>
+                                        </svg>
+                                    </button>
+                                    <button class="icon-btn" onclick="copyApiKey(event,'api-key-gemini')" title="复制 API Key">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="api-key-card-item">
+                                <label>ChatGPT (OpenAI)</label>
+                                <div class="api-key-wrapper">
+                                    <input type="password" id="api-key-openai" placeholder="在此填入 OpenAI API Key" autocomplete="off" spellcheck="false">
+                                    <button class="icon-btn" onclick="toggleApiKey('api-key-openai','eye-icon-openai')" title="显示/隐藏密码">
+                                        <svg id="eye-icon-openai" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                            <circle cx="12" cy="12" r="3"></circle>
+                                        </svg>
+                                    </button>
+                                    <button class="icon-btn" onclick="copyApiKey(event,'api-key-openai')" title="复制 API Key">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="api-key-card-item">
+                                <label>Claude (Anthropic)</label>
+                                <div class="api-key-wrapper">
+                                    <input type="password" id="api-key-anthropic" placeholder="在此填入 Anthropic API Key" autocomplete="off" spellcheck="false">
+                                    <button class="icon-btn" onclick="toggleApiKey('api-key-anthropic','eye-icon-anthropic')" title="显示/隐藏密码">
+                                        <svg id="eye-icon-anthropic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                            <circle cx="12" cy="12" r="3"></circle>
+                                        </svg>
+                                    </button>
+                                    <button class="icon-btn" onclick="copyApiKey(event,'api-key-anthropic')" title="复制 API Key">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="api-key-card-item">
+                                <label>Grok (xAI)</label>
+                                <div class="api-key-wrapper">
+                                    <input type="password" id="api-key-xai" placeholder="在此填入 xAI API Key" autocomplete="off" spellcheck="false">
+                                    <button class="icon-btn" onclick="toggleApiKey('api-key-xai','eye-icon-xai')" title="显示/隐藏密码">
+                                        <svg id="eye-icon-xai" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                            <circle cx="12" cy="12" r="3"></circle>
+                                        </svg>
+                                    </button>
+                                    <button class="icon-btn" onclick="copyApiKey(event,'api-key-xai')" title="复制 API Key">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                         <p class="api-key-hint">密钥保存在本机浏览器本地，请按需保管。</p>
                     </div>
@@ -1552,6 +1749,16 @@
         let historyLimit = localStorage.getItem('gemini_history_limit') ? parseInt(localStorage.getItem('gemini_history_limit')) : 999;
         let showTokenEstimate = localStorage.getItem('gemini_show_token_est') !== 'false';
         let autoScrollBottom = localStorage.getItem('gemini_auto_scroll_bottom') !== 'false';
+        let systemPromptLabelDisplayMode = (() => {
+            const raw = localStorage.getItem('gemini_sp_label_display_mode');
+            if (raw === 'full' || raw === 'emoji' || raw === 'text' || raw === 'off') return raw;
+            const legacy = localStorage.getItem('gemini_show_sp_label_in_reply');
+            if (legacy === null) return 'full';
+            return legacy !== 'false' ? 'full' : 'off';
+        })();
+        let showReplyModelAliasInLabel = localStorage.getItem('gemini_show_reply_model_alias_in_label') === 'true';
+        let replyPrefixDisplayMode = localStorage.getItem('gemini_reply_prefix_display_mode') || 'top';
+        let dimSidebarTitleText = localStorage.getItem('gemini_dim_sidebar_title_text') === 'true';
         /** mod_enter：Cmd/Ctrl+Enter 发送；enter_send：Enter 发送、Shift+Enter 换行 */
         let enterSendMode = localStorage.getItem('gemini_enter_send_mode') || 'mod_enter';
         /** first：侧边栏截断标题取当前段第一条用户提问；last：取最新一条用户提问 */
@@ -1561,7 +1768,26 @@
 
         const historySteps = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 30, 999];
 
-        const defaultModels = ["gemini-3.1-pro-preview", "gemini-3-flash-preview", "gemini-3.1-flash-lite-preview"];
+        const defaultModels = [
+            { provider: 'gemini', model: 'gemini-3.1-pro-preview' },
+            { provider: 'openai', model: 'gpt-4o-mini' },
+            { provider: 'anthropic', model: 'claude-3-5-sonnet-latest' },
+            { provider: 'xai', model: 'grok-2-latest' }
+        ];
+
+        function normalizeModelProvider(p) {
+            const provider = String(p || '').trim().toLowerCase();
+            if (provider === 'openai' || provider === 'anthropic' || provider === 'xai' || provider === 'gemini') return provider;
+            return 'gemini';
+        }
+
+        function providerLabel(p) {
+            const provider = normalizeModelProvider(p);
+            if (provider === 'openai') return 'ChatGPT';
+            if (provider === 'anthropic') return 'Claude';
+            if (provider === 'xai') return 'Grok';
+            return 'Gemini';
+        }
 
         function newModelEntryId() {
             return 'm' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 10);
@@ -1577,10 +1803,10 @@
             let wrote = false;
 
             if (!raw || !Array.isArray(raw) || raw.length === 0) {
-                savedModels = defaultModels.map((model, i) => {
+                savedModels = defaultModels.map((entry, i) => {
                     const id = newModelEntryId() + '_d' + i;
                     modelConfigs[id] = { stream: false, alias: '', thinkingLevel: '' };
-                    return { id, model };
+                    return { id, model: entry.model, provider: normalizeModelProvider(entry.provider) };
                 });
                 wrote = true;
             } else if (typeof raw[0] === 'string') {
@@ -1591,14 +1817,14 @@
                     const old = modelConfigs[model];
                     const cfg = (old && typeof old === 'object') ? { ...old } : { stream: false, alias: '', thinkingLevel: '' };
                     modelConfigs[id] = cfg;
-                    return { id, model };
+                    return { id, model, provider: 'gemini' };
                 });
                 oldNames.forEach(name => { delete modelConfigs[name]; });
                 wrote = true;
             } else {
                 savedModels = raw.map((e, i) => {
-                    if (e && e.id && typeof e.model === 'string') return { id: e.id, model: e.model };
-                    return { id: newModelEntryId() + '_fix' + i, model: (e && e.model) ? e.model : String(e) };
+                    if (e && e.id && typeof e.model === 'string') return { id: e.id, model: e.model, provider: normalizeModelProvider(e.provider || 'gemini') };
+                    return { id: newModelEntryId() + '_fix' + i, model: (e && e.model) ? e.model : String(e), provider: 'gemini' };
                 });
                 savedModels.forEach(e => {
                     if (!modelConfigs[e.id] || typeof modelConfigs[e.id] !== 'object') {
@@ -2047,6 +2273,19 @@
             return e ? e.model : entryId;
         }
 
+        function getModelProvider(entryId) {
+            const e = savedModels.find(x => x.id === entryId);
+            return normalizeModelProvider(e && e.provider ? e.provider : 'gemini');
+        }
+
+        function getModelProviderLabel(entryId) {
+            return providerLabel(getModelProvider(entryId));
+        }
+
+        function getModelDisplayName(entryId) {
+            return `${getModelProviderLabel(entryId)} · ${resolveGeminiModelName(entryId)}`;
+        }
+
         function isValidModelEntryId(id) {
             return savedModels.some(e => e.id === id);
         }
@@ -2061,6 +2300,13 @@
         function getCurrentModel() {
             const chat = chats.find(c => c.id == currentChatId);
             return (chat && chat.model && isValidModelEntryId(chat.model)) ? chat.model : globalDefaultModel;
+        }
+
+        function getApiKeyForProvider(provider) {
+            if (provider === 'openai') return (dom.apiKeyOpenAI && dom.apiKeyOpenAI.value || '').trim();
+            if (provider === 'anthropic') return (dom.apiKeyAnthropic && dom.apiKeyAnthropic.value || '').trim();
+            if (provider === 'xai') return (dom.apiKeyXAI && dom.apiKeyXAI.value || '').trim();
+            return (dom.apiKeyGemini && dom.apiKeyGemini.value || '').trim();
         }
 
         function updateModelPillTooltip(entryId) {
@@ -2138,8 +2384,12 @@
 
         const TITLE_TRUNC_LEN = 15;
 
+        function normalizeSidebarTitleText(raw) {
+            return String(raw || '').replace(/\s*\r?\n+\s*/g, ' ').replace(/[ \t]{2,}/g, ' ').trim();
+        }
+
         function truncateForSidebarTitle(raw) {
-            const t = (raw || '').trim();
+            const t = normalizeSidebarTitleText(raw);
             if (!t) return '新对话';
             return t.length <= TITLE_TRUNC_LEN ? t : t.substring(0, TITLE_TRUNC_LEN) + '...';
         }
@@ -2147,7 +2397,7 @@
         /** 侧边栏与搜索展示用；存盘可为空字符串表示「未命名」，展示为「新对话」 */
         function getChatTitleDisplay(chat) {
             if (!chat) return '新对话';
-            const t = chat.title != null ? String(chat.title).trim() : '';
+            const t = normalizeSidebarTitleText(chat.title);
             return t || '新对话';
         }
 
@@ -2174,7 +2424,7 @@
         }
 
         function markdownToSafeHTML(markdown) {
-            const html = marked.parse(markdown);
+            const html = marked.parse(markdown, { breaks: true, gfm: true });
             if (typeof DOMPurify !== 'undefined') {
                 return DOMPurify.sanitize(html, {
                     USE_PROFILES: { html: true },
@@ -2236,7 +2486,11 @@
             sidebar: document.getElementById('sidebar'), chatList: document.getElementById('chat-list'),
             settingsBar: document.getElementById('sidebar-settings-bar'),
             chatArea: document.getElementById('chat-area'), input: document.getElementById('message-input'),
-            apiKey: document.getElementById('api-key'), sendBtn: document.getElementById('send-btn'), stopBtn: document.getElementById('stop-btn'),
+            apiKeyGemini: document.getElementById('api-key-gemini'),
+            apiKeyOpenAI: document.getElementById('api-key-openai'),
+            apiKeyAnthropic: document.getElementById('api-key-anthropic'),
+            apiKeyXAI: document.getElementById('api-key-xai'),
+            sendBtn: document.getElementById('send-btn'), stopBtn: document.getElementById('stop-btn'),
             modelSelect: document.getElementById('model-select'), searchBtn: document.getElementById('search-toggle-btn'),
             contextMenu: document.getElementById('context-menu'), fontSlider: document.getElementById('fontsize-slider'), fontDisplay: document.getElementById('fontsize-display'),
             defaultModelSelect: document.getElementById('default-model-select'),
@@ -2568,8 +2822,14 @@
                 if (typeof c.systemPrompt !== 'string') { c.systemPrompt = ''; needSaveChats = true; }
             });
             if (needSaveChats) saveData();
-            dom.apiKey.value = localStorage.getItem('gemini_api_key') || '';
-            dom.apiKey.addEventListener('input', () => localStorage.setItem('gemini_api_key', dom.apiKey.value));
+            dom.apiKeyGemini.value = localStorage.getItem('gemini_api_key') || '';
+            dom.apiKeyOpenAI.value = localStorage.getItem('openai_api_key') || '';
+            dom.apiKeyAnthropic.value = localStorage.getItem('anthropic_api_key') || '';
+            dom.apiKeyXAI.value = localStorage.getItem('xai_api_key') || '';
+            dom.apiKeyGemini.addEventListener('input', () => localStorage.setItem('gemini_api_key', dom.apiKeyGemini.value));
+            dom.apiKeyOpenAI.addEventListener('input', () => localStorage.setItem('openai_api_key', dom.apiKeyOpenAI.value));
+            dom.apiKeyAnthropic.addEventListener('input', () => localStorage.setItem('anthropic_api_key', dom.apiKeyAnthropic.value));
+            dom.apiKeyXAI.addEventListener('input', () => localStorage.setItem('xai_api_key', dom.apiKeyXAI.value));
             renderSettingsModels(); renderShortcutsUI();
             dom.modelSelect.addEventListener('change', () => {
                 let chat = chats.find(c => c.id == currentChatId);
@@ -2626,9 +2886,10 @@
             dom.contextMenu.style.display = 'none';
         });
 
-        function toggleApiKey() {
-            const input = document.getElementById('api-key');
-            const eyeIcon = document.getElementById('eye-icon');
+        function toggleApiKey(inputId, eyeIconId) {
+            const input = document.getElementById(inputId);
+            const eyeIcon = document.getElementById(eyeIconId);
+            if (!input || !eyeIcon) return;
             if (input.type === 'password') {
                 input.type = 'text';
                 eyeIcon.innerHTML = '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line>';
@@ -2638,8 +2899,9 @@
             }
         }
 
-        function copyApiKey(e) {
-            const input = document.getElementById('api-key');
+        function copyApiKey(e, inputId) {
+            const input = document.getElementById(inputId);
+            if (!input) return;
             if (!input.value) return;
             navigator.clipboard.writeText(input.value).then(() => {
                 const btn = e.currentTarget; const origHtml = btn.innerHTML;
@@ -2765,8 +3027,8 @@
                     const opt = document.createElement('option'); opt.value = e.id;
                     const dup = savedModels.filter(x => x.model === e.model).length > 1;
                     opt.innerText = dup
-                        ? `${index + 1}. ${e.model}`
-                        : (withIndex ? `${index + 1}. ${e.model}` : `${getModelAlias(e.id)} — ${e.model}`);
+                        ? `${index + 1}. ${getModelDisplayName(e.id)}`
+                        : (withIndex ? `${index + 1}. ${getModelDisplayName(e.id)}` : `${getModelAlias(e.id)} — ${getModelDisplayName(e.id)}`);
                     selectEl.appendChild(opt);
                 });
             };
@@ -2783,6 +3045,86 @@
         }
 
         function saveDefaultModel() { globalDefaultModel = dom.defaultModelSelect.value; localStorage.setItem('gemini_default_model', globalDefaultModel); }
+
+        function getSystemPromptPresetLabel(promptText) {
+            const text = (promptText || '').trim();
+            if (!text) return '';
+            const matched = promptPresets.find(p => (p && typeof p.content === 'string' ? p.content.trim() : '') === text);
+            if (!matched) return '📝 系统提示词';
+            const emoji = normalizePresetEmoji(matched.emoji || '') || '📝';
+            const name = (matched.name || '').trim();
+            if (!name) return '📝 系统提示词';
+            return `${emoji} ${name}`;
+        }
+
+        function getSystemPromptPresetMeta(promptText) {
+            const text = (promptText || '').trim();
+            if (!text) return { label: '', emoji: '', text: '' };
+            const matched = promptPresets.find(p => (p && typeof p.content === 'string' ? p.content.trim() : '') === text);
+            if (!matched) return { label: '📝 系统提示词', emoji: '📝', text: '系统提示词' };
+            const emoji = normalizePresetEmoji(matched.emoji || '') || '📝';
+            const name = (matched.name || '').trim() || '系统提示词';
+            return { label: `${emoji} ${name}`, emoji, text: name };
+        }
+
+        function getModelLabelForReply(entryId) {
+            const cfg = modelConfigs[entryId];
+            if (cfg && typeof cfg.alias === 'string') {
+                const alias = cfg.alias.trim();
+                if (alias) return alias;
+            }
+            return resolveGeminiModelName(entryId);
+        }
+
+        function buildReplyPrefixMeta(promptText, modelEntryId) {
+            const sp = getSystemPromptPresetMeta(promptText);
+            return {
+                systemPromptLabel: sp.label || '',
+                systemPromptEmoji: sp.emoji || '',
+                systemPromptText: sp.text || '',
+                modelLabel: getModelLabelForReply(modelEntryId) || ''
+            };
+        }
+
+        function getReplyPrefixLabelFromMeta(meta) {
+            if (!meta || typeof meta !== 'object') return '';
+            const parts = [];
+            const spLabel = typeof meta.systemPromptLabel === 'string' ? meta.systemPromptLabel.trim() : '';
+            let spEmoji = typeof meta.systemPromptEmoji === 'string' ? meta.systemPromptEmoji.trim() : '';
+            let spText = typeof meta.systemPromptText === 'string' ? meta.systemPromptText.trim() : '';
+            if ((!spEmoji || !spText) && spLabel) {
+                const first = normalizePresetEmoji(spLabel) || '';
+                if (!spEmoji) spEmoji = first;
+                if (!spText) {
+                    const stripped = first && spLabel.startsWith(first) ? spLabel.slice(first.length).trim() : '';
+                    spText = stripped || spLabel;
+                }
+            }
+            const modelLabel = typeof meta.modelLabel === 'string' ? meta.modelLabel.trim() : '';
+            if (systemPromptLabelDisplayMode === 'full') {
+                const full = [spEmoji, spText].filter(Boolean).join(' ').trim() || spLabel;
+                if (full) parts.push(full);
+            } else if (systemPromptLabelDisplayMode === 'emoji') {
+                if (spEmoji) parts.push(spEmoji);
+            } else if (systemPromptLabelDisplayMode === 'text') {
+                if (spText) parts.push(spText);
+            }
+            if (showReplyModelAliasInLabel && modelLabel) parts.push(modelLabel);
+            if (!parts.length) return '';
+            if (replyPrefixDisplayMode === 'hover' || replyPrefixDisplayMode === 'float') return parts.join(' | ');
+            return `（${parts.join(' | ')}）`;
+        }
+
+        function getMessageDisplayPrefixLabel(msg) {
+            if (!msg || msg.role !== 'model') return '';
+            if (msg._replyPrefixMeta && typeof msg._replyPrefixMeta === 'object') {
+                return getReplyPrefixLabelFromMeta(msg._replyPrefixMeta);
+            }
+            if (typeof msg._displayPrefixLabel === 'string') {
+                return msg._displayPrefixLabel.trim();
+            }
+            return '';
+        }
 
         window.setTitleNamingMode = function (mode) {
             if (mode !== 'first' && mode !== 'last') return;
@@ -2807,7 +3149,7 @@
                 const alias = modelConfigs[m].alias || '';
                 const div = document.createElement('div');
                 div.className = 'model-item drag-item'; div.draggable = true; div.dataset.val = m;
-                const nameSpan = document.createElement('span'); nameSpan.title = entry.model + '\n' + entry.id; nameSpan.textContent = (index + 1) + '. ' + entry.model;
+                const nameSpan = document.createElement('span'); nameSpan.title = `${providerLabel(entry.provider)}\n${entry.model}\n${entry.id}`; nameSpan.textContent = (index + 1) + '. ' + providerLabel(entry.provider) + ' · ' + entry.model;
                 const actions = document.createElement('div'); actions.className = 'model-actions';
                 const aliasBtn = document.createElement('button');
                 aliasBtn.title = alias ? '简称: ' + alias : '设置简称';
@@ -2868,9 +3210,11 @@
 
         function addNewModel() {
             const input = document.getElementById('add-model-input'); if (!input) return;
+            const providerSel = document.getElementById('add-model-provider');
             const val = input.value.trim(); if (!val) return;
+            const provider = normalizeModelProvider(providerSel ? providerSel.value : 'gemini');
             const id = newModelEntryId();
-            savedModels.push({ id, model: val });
+            savedModels.push({ id, model: val, provider });
             modelConfigs[id] = { stream: false, alias: '', thinkingLevel: '' };
             localStorage.setItem('gemini_custom_models', JSON.stringify(savedModels));
             localStorage.setItem('gemini_model_configs', JSON.stringify(modelConfigs));
@@ -2895,7 +3239,7 @@
 
         function confirmDeleteModel(entryId, e) {
             if (savedModels.length <= 1) return alert('至少保留一个模型！');
-            const label = resolveGeminiModelName(entryId);
+            const label = getModelDisplayName(entryId);
             showContextMenu(e.clientX, e.clientY, [{ label: '确认删除 ' + label, danger: true, action: () => {
                 savedModels = savedModels.filter(x => x.id !== entryId);
                 delete modelConfigs[entryId];
@@ -3001,6 +3345,41 @@
             updateJumpToBottomBtn();
         }
 
+        function setSystemPromptLabelInReplyMode(mode) {
+            if (!['full', 'emoji', 'text', 'off'].includes(mode)) return;
+            systemPromptLabelDisplayMode = mode;
+            localStorage.setItem('gemini_sp_label_display_mode', mode);
+            localStorage.setItem('gemini_show_sp_label_in_reply', mode === 'off' ? 'false' : 'true');
+            document.querySelectorAll('button[data-sp-label-mode]').forEach(b => b.classList.remove('active'));
+            document.querySelector(`button[data-sp-label-mode="${systemPromptLabelDisplayMode}"]`)?.classList.add('active');
+            if (currentChatId) renderChatArea();
+        }
+
+        function setReplyModelAliasLabel(val) {
+            showReplyModelAliasInLabel = val === true;
+            localStorage.setItem('gemini_show_reply_model_alias_in_label', showReplyModelAliasInLabel ? 'true' : 'false');
+            document.querySelectorAll('button[data-reply-model-alias-val]').forEach(b => b.classList.remove('active'));
+            document.querySelector(`button[data-reply-model-alias-val="${showReplyModelAliasInLabel}"]`)?.classList.add('active');
+        }
+
+        function setReplyPrefixDisplayMode(mode) {
+            const valid = ['top', 'bottom', 'hover', 'float'];
+            if (!valid.includes(mode)) return;
+            replyPrefixDisplayMode = mode;
+            localStorage.setItem('gemini_reply_prefix_display_mode', mode);
+            document.querySelectorAll('button[data-reply-prefix-mode]').forEach(b => b.classList.remove('active'));
+            document.querySelector(`button[data-reply-prefix-mode="${replyPrefixDisplayMode}"]`)?.classList.add('active');
+            if (currentChatId) renderChatArea();
+        }
+
+        function setSidebarTitleDim(val) {
+            dimSidebarTitleText = val === true;
+            localStorage.setItem('gemini_dim_sidebar_title_text', dimSidebarTitleText ? 'true' : 'false');
+            document.querySelectorAll('button[data-sidebar-title-dim-val]').forEach(b => b.classList.remove('active'));
+            document.querySelector(`button[data-sidebar-title-dim-val="${dimSidebarTitleText}"]`)?.classList.add('active');
+            document.body.classList.toggle('sidebar-titles-dim', dimSidebarTitleText);
+        }
+
         function toggleHistoryPopup(e) {
             if (e) e.stopPropagation();
             // 关闭 sysprompt popup
@@ -3056,6 +3435,17 @@
             document.querySelector(`button[data-enter-mode="${enterSendMode}"]`)?.classList.add('active');
             document.querySelectorAll('button[data-title-naming-mode]').forEach(b => b.classList.remove('active'));
             document.querySelector(`button[data-title-naming-mode="${titleNamingMode}"]`)?.classList.add('active');
+            if (!['full', 'emoji', 'text', 'off'].includes(systemPromptLabelDisplayMode)) systemPromptLabelDisplayMode = 'full';
+            document.querySelectorAll('button[data-sp-label-mode]').forEach(b => b.classList.remove('active'));
+            document.querySelector(`button[data-sp-label-mode="${systemPromptLabelDisplayMode}"]`)?.classList.add('active');
+            document.querySelectorAll('button[data-reply-model-alias-val]').forEach(b => b.classList.remove('active'));
+            document.querySelector(`button[data-reply-model-alias-val="${showReplyModelAliasInLabel}"]`)?.classList.add('active');
+            if (!['top', 'bottom', 'hover', 'float'].includes(replyPrefixDisplayMode)) replyPrefixDisplayMode = 'top';
+            document.querySelectorAll('button[data-reply-prefix-mode]').forEach(b => b.classList.remove('active'));
+            document.querySelector(`button[data-reply-prefix-mode="${replyPrefixDisplayMode}"]`)?.classList.add('active');
+            document.querySelectorAll('button[data-sidebar-title-dim-val]').forEach(b => b.classList.remove('active'));
+            document.querySelector(`button[data-sidebar-title-dim-val="${dimSidebarTitleText}"]`)?.classList.add('active');
+            document.body.classList.toggle('sidebar-titles-dim', dimSidebarTitleText);
             updateSendKeyHints();
             updateJumpToBottomBtn();
         }
@@ -3745,9 +4135,16 @@
 
         function clearAllData() {
             if (confirm("警告：确定要彻底清空所有对话数据吗？\n(API Key 和 自定义模型将被保留)")) {
-                const savedKey = localStorage.getItem('gemini_api_key'), savedMods = localStorage.getItem('gemini_custom_models'), defModel = localStorage.getItem('gemini_default_model');
+                const savedGeminiKey = localStorage.getItem('gemini_api_key');
+                const savedOpenAIKey = localStorage.getItem('openai_api_key');
+                const savedAnthropicKey = localStorage.getItem('anthropic_api_key');
+                const savedXAIKey = localStorage.getItem('xai_api_key');
+                const savedMods = localStorage.getItem('gemini_custom_models'), defModel = localStorage.getItem('gemini_default_model');
                 localStorage.clear();
-                if (savedKey) localStorage.setItem('gemini_api_key', savedKey);
+                if (savedGeminiKey) localStorage.setItem('gemini_api_key', savedGeminiKey);
+                if (savedOpenAIKey) localStorage.setItem('openai_api_key', savedOpenAIKey);
+                if (savedAnthropicKey) localStorage.setItem('anthropic_api_key', savedAnthropicKey);
+                if (savedXAIKey) localStorage.setItem('xai_api_key', savedXAIKey);
                 if (savedMods) localStorage.setItem('gemini_custom_models', savedMods);
                 if (defModel) localStorage.setItem('gemini_default_model', defModel);
                 location.reload();
@@ -3969,8 +4366,8 @@
             input.onclick = (e) => e.stopPropagation(); input.onmousedown = (e) => e.stopPropagation();
             span.replaceWith(input); input.focus(); input.select();
             const finishRename = () => {
-                const newTitle = input.value.trim();
-                const prev = (chat.title != null ? String(chat.title) : '').trim();
+                const newTitle = normalizeSidebarTitleText(input.value);
+                const prev = normalizeSidebarTitleText(chat.title);
                 if (newTitle === '' && prev === '') { renderSidebar(); return; }
                 if (newTitle === '') {
                     chat.titleLastUserOverride = false;
@@ -4052,7 +4449,7 @@
             const currentChat = chats.find(c => c.id === currentChatId);
             if (!currentChat || currentChat.history.length === 0) {
                 if (inputContainer) inputContainer.classList.add('kanso-welcome-footer');
-                const hasApiKey = !!dom.apiKey.value.trim();
+                const hasApiKey = !!(dom.apiKeyGemini.value.trim() || dom.apiKeyOpenAI.value.trim() || dom.apiKeyAnthropic.value.trim() || dom.apiKeyXAI.value.trim());
                 const welcomeText = hasApiKey
                     ? (() => {
                         const commonQuotes = ["👋 嗨，有什么吩咐", "👋 嗨，今天想聊什么", "👋 嗨，有何吩咐", "🖐️ 嗨", "有什么可以帮你", "有什么我可以帮上的", "准备好了", "随时开始吧", "请随时开始", "就绪，请说"];
@@ -4108,7 +4505,7 @@
                 } else {
                     const role = msg.role === 'user' ? 'user' : 'bot';
                     const txt = getTextFromParts(msg.parts);
-                    appendMessageHTML(txt, role, '', index, false, false, false, !!msg._queueSolidify);
+                    appendMessageHTML(txt, role, '', index, false, false, false, !!msg._queueSolidify, getMessageDisplayPrefixLabel(msg));
                     if (role === 'user' && msg._imgs && msg._imgs.length) {
                         const lastRow = dom.chatArea.lastElementChild;
                         const msgDiv = lastRow && lastRow.querySelector('.message');
@@ -4142,12 +4539,25 @@
             requestAnimationFrame(() => updateJumpToBottomBtn());
         }
 
-        function appendMessageHTML(text, role, id = '', index = -1, autoScroll = true, isRawHTML = false, isQueued = false, queueSolidify = false) {
+        function appendMessageHTML(text, role, id = '', index = -1, autoScroll = true, isRawHTML = false, isQueued = false, queueSolidify = false, displayPrefixLabel = '') {
             const rowDiv = document.createElement('div'); rowDiv.className = `message-row ${role}`; if (id) rowDiv.id = id;
             if (isQueued) rowDiv.classList.add('queued');
             if (queueSolidify && role === 'user') rowDiv.classList.add('queue-solidify');
             const msgDiv = document.createElement('div'); msgDiv.className = `message ${role}`;
-            if (role === 'bot') { msgDiv.innerHTML = isRawHTML ? text : markdownToSafeHTML(text); }
+            if (role === 'bot') {
+                const bodyHtml = isRawHTML ? text : markdownToSafeHTML(text);
+                let prefixHtml = '';
+                if (!isRawHTML && displayPrefixLabel && replyPrefixDisplayMode !== 'none') {
+                    const escaped = escapeHtml(displayPrefixLabel);
+                    if (replyPrefixDisplayMode === 'top') prefixHtml = `<div class="reply-prefix-label reply-prefix-top">${escaped}</div>`;
+                    else if (replyPrefixDisplayMode === 'bottom') prefixHtml = `<div class="reply-prefix-label reply-prefix-bottom">${escaped}</div>`;
+                    else if (replyPrefixDisplayMode === 'hover') prefixHtml = `<div class="reply-prefix-label reply-prefix-hover">${escaped}</div>`;
+                    else if (replyPrefixDisplayMode === 'float') prefixHtml = `<div class="reply-prefix-label reply-prefix-float">${escaped}</div>`;
+                }
+                msgDiv.innerHTML = replyPrefixDisplayMode === 'bottom'
+                    ? (bodyHtml + prefixHtml)
+                    : (prefixHtml + bodyHtml);
+            }
             else {
                 if (isRawHTML) { msgDiv.innerHTML = text; }
                 else {
@@ -4258,7 +4668,7 @@
                 const item = document.createElement('div');
                 const active = e.id === cur;
                 item.style.cssText = 'padding:8px 14px;font-size:13px;cursor:pointer;color:var(--text-main);display:flex;flex-direction:column;gap:1px;background:' + (active ? 'var(--bg-sidebar-active)' : 'transparent') + ';';
-                item.innerHTML = '<span style="font-weight:' + (active ? '600' : '400') + ';">' + getModelAlias(e.id) + '</span><span style="font-size:11px;color:var(--text-muted);font-family:monospace;">' + e.model + '</span>';
+                item.innerHTML = '<span style="font-weight:' + (active ? '600' : '400') + ';">' + getModelAlias(e.id) + '</span><span style="font-size:11px;color:var(--text-muted);font-family:monospace;">' + providerLabel(e.provider) + ' · ' + e.model + '</span>';
                 item.onmouseenter = () => { item.style.background = 'var(--bg-sidebar-hover)'; };
                 item.onmouseleave = () => { item.style.background = active ? 'var(--bg-sidebar-active)' : 'transparent'; };
                 item.onclick = () => { dom.modelSelect.value = e.id; let chat = chats.find(c => c.id == currentChatId); if (chat) { chat.model = e.id; saveData(); } updateModelPill(e.id); dd.style.display = 'none'; refocusMessageInputSoft(); syncHeaderHoverTooltipSuppression(); };
@@ -4276,9 +4686,11 @@
         }
 
         function handleSendAction() {
-            const apiKey = dom.apiKey.value.trim(), text = dom.input.value.trim(), model = dom.modelSelect.value;
+            const text = dom.input.value.trim(), model = dom.modelSelect.value;
+            const provider = getModelProvider(model);
+            const apiKey = getApiKeyForProvider(provider);
             const wasNearBottomBeforeSend = isNearChatBottom(140);
-            if (!apiKey) { switchTab('tab-system'); openSettings(); return alert('初次使用，请设置你的 API Key'); }
+            if (!apiKey) { switchTab('tab-system'); openSettings(); return alert('请先配置 ' + providerLabel(provider) + ' API Key'); }
             if (!text && !pendingImgs.length) return;
             collapseInput(); dom.input.value = ''; dom.input.style.height = '40px'; updateSendBtnState();
             let targetChat = chats.find(c => c.id === currentChatId);
@@ -4303,10 +4715,10 @@
             }
             const imgs = pendingImgs.splice(0);
             renderPendingImgs();
-            executeApiRequest(targetChat, text, model, apiKey, imgs, wasNearBottomBeforeSend);
+            executeApiRequest(targetChat, text, model, imgs, wasNearBottomBeforeSend);
         }
 
-        async function executeApiRequest(targetChat, text, model, apiKey, imgs, wasNearBottomHint = null, fromQueue = false) {
+        async function executeApiRequest(targetChat, text, model, imgs, wasNearBottomHint = null, fromQueue = false) {
             const isCurrentChat = currentChatId === targetChat.id;
             const wasNearBottom = isCurrentChat ? (wasNearBottomHint === true || isNearChatBottom(140)) : false;
 
@@ -4352,44 +4764,116 @@
             }
             saveData(); if (currentChatId === targetChat.id) renderChatArea();
 
-            let apiContentsBase = validContext;
             const spTrim = (targetChat.systemPrompt || '').trim();
-            if (spTrim) {
-                apiContentsBase = [{ role: 'user', parts: [{ text: spTrim }] }, { role: 'model', parts: [{ text: '好的，我明白了。' }] }, ...validContext];
-            }
-
-            const apiContents = apiContentsBase.map(m => {
-                if (m.role === 'user' && m._imgs && m._imgs.length) {
-                    const apiParts = m._imgs.map(img => ({ inlineData: { mimeType: img.mime, data: img.b64 } }));
-                    apiParts.push(...m.parts);
-                    return { role: m.role, parts: apiParts };
-                }
-                return { role: m.role, parts: m.parts };
-            });
-
-            const requestBody = { contents: apiContents };
-            if (spTrim) requestBody.systemInstruction = { parts: [{ text: spTrim }] };
-            if (isSearchEnabled) requestBody.tools = [{ googleSearch: {} }];
             const entryId = model;
-            const apiModelName = encodeURIComponent(resolveGeminiModelName(entryId));
-            const tlRaw = modelConfigs[entryId] && typeof modelConfigs[entryId] === 'object' ? (modelConfigs[entryId].thinkingLevel || '').trim() : '';
-            const validTL = ['minimal', 'low', 'medium', 'high'];
-            if (tlRaw && validTL.includes(tlRaw)) {
-                requestBody.generationConfig = requestBody.generationConfig || {};
-                requestBody.generationConfig.thinkingConfig = { thinkingLevel: tlRaw };
+            const provider = getModelProvider(entryId);
+            const apiKey = getApiKeyForProvider(provider);
+            if (!apiKey) throw new Error(`缺少 ${providerLabel(provider)} API Key`);
+
+            const modelName = resolveGeminiModelName(entryId);
+            const isStream = modelConfigs[entryId] && typeof modelConfigs[entryId] === 'object' ? modelConfigs[entryId].stream === true : false;
+
+            const plainTextFromMessage = (m) => getTextFromParts(m.parts || []);
+            const toOpenAIContent = (m) => {
+                const textVal = plainTextFromMessage(m);
+                if (!(m.role === 'user' && m._imgs && m._imgs.length)) return textVal;
+                const arr = [];
+                if (textVal) arr.push({ type: 'text', text: textVal });
+                m._imgs.forEach(img => arr.push({ type: 'image_url', image_url: { url: `data:${img.mime};base64,${img.b64}` } }));
+                return arr.length ? arr : textVal;
+            };
+            const toAnthropicContent = (m) => {
+                const textVal = plainTextFromMessage(m);
+                if (!(m.role === 'user' && m._imgs && m._imgs.length)) return textVal;
+                const arr = [];
+                m._imgs.forEach(img => arr.push({ type: 'image', source: { type: 'base64', media_type: img.mime, data: img.b64 } }));
+                if (textVal) arr.push({ type: 'text', text: textVal });
+                return arr.length ? arr : textVal;
+            };
+            const chatApiMessages = validContext.map(m => ({
+                role: m.role === 'model' ? 'assistant' : 'user',
+                content: (provider === 'anthropic') ? toAnthropicContent(m) : toOpenAIContent(m)
+            }));
+
+            let requestUrl = '';
+            let requestBody = {};
+            let headers = { 'Content-Type': 'application/json' };
+            if (provider === 'openai' || provider === 'xai') {
+                requestUrl = provider === 'openai' ? 'https://api.openai.com/v1/chat/completions' : 'https://api.x.ai/v1/chat/completions';
+                const messages = [];
+                if (spTrim) messages.push({ role: 'system', content: spTrim });
+                messages.push(...chatApiMessages);
+                requestBody = { model: modelName, messages, stream: !!isStream };
+                headers.Authorization = `Bearer ${apiKey}`;
+            } else if (provider === 'anthropic') {
+                requestUrl = 'https://api.anthropic.com/v1/messages';
+                requestBody = { model: modelName, max_tokens: 4096, messages: chatApiMessages, stream: !!isStream };
+                if (spTrim) requestBody.system = spTrim;
+                headers['x-api-key'] = apiKey;
+                headers['anthropic-version'] = '2023-06-01';
+            } else {
+                let apiContentsBase = validContext;
+                if (spTrim) apiContentsBase = [{ role: 'user', parts: [{ text: spTrim }] }, { role: 'model', parts: [{ text: '好的，我明白了。' }] }, ...validContext];
+                const apiContents = apiContentsBase.map(m => {
+                    if (m.role === 'user' && m._imgs && m._imgs.length) {
+                        const apiParts = m._imgs.map(img => ({ inlineData: { mimeType: img.mime, data: img.b64 } }));
+                        apiParts.push(...m.parts);
+                        return { role: m.role, parts: apiParts };
+                    }
+                    return { role: m.role, parts: m.parts };
+                });
+                requestBody = { contents: apiContents };
+                if (spTrim) requestBody.systemInstruction = { parts: [{ text: spTrim }] };
+                if (isSearchEnabled) requestBody.tools = [{ googleSearch: {} }];
+                const tlRaw = modelConfigs[entryId] && typeof modelConfigs[entryId] === 'object' ? (modelConfigs[entryId].thinkingLevel || '').trim() : '';
+                const validTL = ['minimal', 'low', 'medium', 'high'];
+                if (tlRaw && validTL.includes(tlRaw)) {
+                    requestBody.generationConfig = requestBody.generationConfig || {};
+                    requestBody.generationConfig.thinkingConfig = { thinkingLevel: tlRaw };
+                }
+                const apiModelName = encodeURIComponent(modelName);
+                requestUrl = isStream
+                    ? `https://generativelanguage.googleapis.com/v1beta/models/${apiModelName}:streamGenerateContent?alt=sse&key=${apiKey}`
+                    : `https://generativelanguage.googleapis.com/v1beta/models/${apiModelName}:generateContent?key=${apiKey}`;
             }
+
+            const extractFinalText = (data) => {
+                if (provider === 'gemini') {
+                    const cand = data.candidates && data.candidates[0];
+                    const parts = cand && cand.content && cand.content.parts;
+                    return getTextFromParts(parts);
+                }
+                if (provider === 'anthropic') {
+                    const arr = Array.isArray(data.content) ? data.content : [];
+                    return arr.filter(x => x && x.type === 'text').map(x => x.text || '').join('');
+                }
+                const msg = data.choices && data.choices[0] && data.choices[0].message;
+                if (msg && typeof msg.content === 'string') return msg.content;
+                if (msg && Array.isArray(msg.content)) return msg.content.map(c => c && (c.text || c.content || '')).join('');
+                return '';
+            };
+            const extractStreamChunk = (data) => {
+                if (provider === 'gemini') {
+                    if (data.candidates && data.candidates[0].content) return getTextFromParts(data.candidates[0].content.parts);
+                    return '';
+                }
+                if (provider === 'anthropic') {
+                    if (data.type === 'content_block_delta' && data.delta && typeof data.delta.text === 'string') return data.delta.text;
+                    if (data.delta && typeof data.delta.text === 'string') return data.delta.text;
+                    return '';
+                }
+                const delta = data.choices && data.choices[0] && data.choices[0].delta;
+                if (delta && typeof delta.content === 'string') return delta.content;
+                if (delta && Array.isArray(delta.content)) return delta.content.map(c => c && c.text ? c.text : '').join('');
+                return '';
+            };
 
             abortControllers[targetChat.id] = new AbortController();
             if (currentChatId === targetChat.id) updateInputUI();
             renderSidebar();
 
-            const isStream = modelConfigs[entryId] && typeof modelConfigs[entryId] === 'object' ? modelConfigs[entryId].stream === true : false;
-            const requestUrl = isStream
-                ? `https://generativelanguage.googleapis.com/v1beta/models/${apiModelName}:streamGenerateContent?alt=sse&key=${apiKey}`
-                : `https://generativelanguage.googleapis.com/v1beta/models/${apiModelName}:generateContent?key=${apiKey}`;
-
             try {
-                const response = await fetch(requestUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(requestBody), signal: abortControllers[targetChat.id].signal });
+                const response = await fetch(requestUrl, { method: 'POST', headers, body: JSON.stringify(requestBody), signal: abortControllers[targetChat.id].signal });
                 if (!response.ok) {
                     const raw = await response.text();
                     let errMsg = '请求失败';
@@ -4407,9 +4891,7 @@
 
                 if (!isStream) {
                     const data = await response.json();
-                    const cand = data.candidates && data.candidates[0];
-                    const parts = cand && cand.content && cand.content.parts;
-                    const text = getTextFromParts(parts);
+                    const text = extractFinalText(data);
                     finalReplyText = text ? text : '（模型返回了空内容；可能是安全过滤、无候选或接口格式变化。）';
                 } else {
                     const reader = response.body.getReader();
@@ -4427,25 +4909,23 @@
                                 if (dataStr === '[DONE]') continue;
                                 try {
                                     const data = JSON.parse(dataStr);
-                                    if (data.candidates && data.candidates[0].content) {
-                                        const p = data.candidates[0].content.parts;
-                                        const chunk = getTextFromParts(p);
-                                        finalReplyText += chunk;
-                                        if (currentChatId === targetChat.id) {
-                                            const msgRow = document.getElementById(loadingId);
-                                            if (msgRow) {
-                                                msgRow.querySelector('.message').innerHTML = markdownToSafeHTML(finalReplyText);
-                                                if (autoScrollBottom) {
-                                                    if (dom.chatArea.scrollHeight - dom.chatArea.scrollTop - dom.chatArea.clientHeight < 150) dom.chatArea.scrollTop = dom.chatArea.scrollHeight;
+                                    const chunk = extractStreamChunk(data);
+                                    if (!chunk) continue;
+                                    finalReplyText += chunk;
+                                    if (currentChatId === targetChat.id) {
+                                        const msgRow = document.getElementById(loadingId);
+                                        if (msgRow) {
+                                            msgRow.querySelector('.message').innerHTML = markdownToSafeHTML(finalReplyText);
+                                            if (autoScrollBottom) {
+                                                if (dom.chatArea.scrollHeight - dom.chatArea.scrollTop - dom.chatArea.clientHeight < 150) dom.chatArea.scrollTop = dom.chatArea.scrollHeight;
+                                            } else {
+                                                if (isNearChatBottom(120)) {
+                                                    dom.chatArea.scrollTop = dom.chatArea.scrollHeight;
+                                                    showJumpToBottomHint = false;
                                                 } else {
-                                                    if (isNearChatBottom(120)) {
-                                                        dom.chatArea.scrollTop = dom.chatArea.scrollHeight;
-                                                        showJumpToBottomHint = false;
-                                                    } else {
-                                                        showJumpToBottomHint = true;
-                                                    }
-                                                    updateJumpToBottomBtn();
+                                                    showJumpToBottomHint = true;
                                                 }
+                                                updateJumpToBottomBtn();
                                             }
                                         }
                                     }
@@ -4457,9 +4937,10 @@
                 if (finalReplyText === '') {
                     finalReplyText = '（模型返回了空内容；可能是安全过滤、无候选或接口格式变化。）';
                 }
+                const replyPrefixMeta = buildReplyPrefixMeta(spTrim, model);
 
-                if (loadingIdx > -1) targetChat.history[loadingIdx] = { role: "model", parts: [{ text: finalReplyText }] };
-                else targetChat.history.push({ role: "model", parts: [{ text: finalReplyText }] });
+                if (loadingIdx > -1) targetChat.history[loadingIdx] = { role: "model", parts: [{ text: finalReplyText }], _replyPrefixMeta: replyPrefixMeta };
+                else targetChat.history.push({ role: "model", parts: [{ text: finalReplyText }], _replyPrefixMeta: replyPrefixMeta });
                 saveData();
 
             } catch (error) {
@@ -4479,7 +4960,7 @@
             } finally {
                 if (targetChat.queue && targetChat.queue.length > 0) {
                     const nextRequest = targetChat.queue.shift(); saveData();
-                    executeApiRequest(targetChat, nextRequest.text, nextRequest.model, apiKey, nextRequest.imgs || [], undefined, true);
+                    executeApiRequest(targetChat, nextRequest.text, nextRequest.model, nextRequest.imgs || [], undefined, true);
                 } else {
                     delete abortControllers[targetChat.id];
                     if (currentChatId !== targetChat.id) {
