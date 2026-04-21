@@ -288,7 +288,7 @@
             right: 20px;
             bottom: calc(var(--input-height) + 12px);
             display: none;
-            z-index: 1200;
+            z-index: 1190;
             pointer-events: auto;
         }
 
@@ -328,15 +328,18 @@
 
         #input-container {
             position: absolute; bottom: 0; left: 0; right: 0;
-            padding: 8px 20px 20px; margin: 0; width: 100%;
-            background: var(--bg-main); z-index: 100;
+            padding: 6px 20px 20px; margin: 0; width: 100%;
+            background: var(--bg-main); z-index: 1250;
             border-top: 1px solid var(--border-color);
             transition: background-color 0.3s, backdrop-filter 0.3s;
-            display: flex; align-items: flex-end;
+            display: flex; flex-direction: column; align-items: stretch; gap: 4px;
         }
         #input-container.kanso-welcome-footer { border-top: none; }
 
-        .input-box-wrapper { max-width: 850px; width: 100%; margin: 0 auto; position: relative; }
+        .input-box-wrapper {
+            max-width: 850px; width: 100%; margin: 0 auto; position: relative;
+            display: flex; flex-direction: column; align-items: stretch; gap: 0;
+        }
         .input-box { display: flex; align-items: center; gap: 10px; background: var(--bg-main); border: 1px solid var(--border-color); border-radius: 12px; padding: 10px; box-shadow: none; transition: background 0.3s, border 0.3s; }
 
         .header-left, .header-right { display: flex; align-items: center; gap: 8px; }
@@ -414,6 +417,32 @@
             font-size: 11px;
             opacity: 0.3;
             z-index: 2;
+        }
+
+        #kanso-autoscroll-hint {
+            flex: 0 0 auto;
+            max-height: 0;
+            margin: 0;
+            padding: 0 12px;
+            overflow: hidden;
+            opacity: 0;
+            pointer-events: none;
+            text-align: center;
+            font-size: 11px;
+            font-weight: 500;
+            line-height: 1.35;
+            letter-spacing: 0.01em;
+            color: var(--text-muted);
+            transform: translateY(0);
+            transition: max-height 0.2s ease, opacity 0.2s ease, margin 0.2s ease, padding 0.2s ease, transform 0.2s ease;
+        }
+        #kanso-autoscroll-hint.visible {
+            max-height: 39px;
+            opacity: 0.72;
+            margin-bottom: 0;
+            padding-top: 0;
+            padding-bottom: 1px;
+            transform: translateY(-1px);
         }
 
         /* 队列中：Material 式斜向高光扫过（骨架屏 / 占位内容经典动画） */
@@ -787,11 +816,43 @@
         #img-lightbox img { max-width: 90vw; max-height: 90vh; border-radius: 8px; object-fit: contain; cursor: default; }
         .att-chip { display: inline-flex; align-items: center; gap: 5px; padding: 3px 8px; border-radius: 6px; font-size: 12px; background: rgba(128,128,128,0.12); color: var(--text-main); cursor: pointer; position: relative; white-space: nowrap; transition: background .15s; }
         .att-chip:hover { background: rgba(128,128,128,0.2); }
-        .att-chip .att-preview { display: none; position: absolute; bottom: calc(100% + 6px); left: 0; background: var(--bg-main); border: 0.5px solid var(--border-color); border-radius: 10px; padding: 5px; z-index: 100; pointer-events: none; box-shadow: var(--shadow-panel); }
+        .att-chip .att-preview {
+            display: none;
+            position: absolute;
+            bottom: calc(100% + 6px);
+            left: 0;
+            background: var(--bg-main);
+            border: 0.5px solid var(--border-color);
+            border-radius: 10px;
+            padding: 5px;
+            z-index: 4000;
+            pointer-events: none;
+            box-shadow: var(--shadow-panel);
+        }
         .att-chip:hover .att-preview { display: block; }
         .att-chip .att-preview img { display: block; max-width: 180px; max-height: 130px; border-radius: 6px; }
-        .att-pending { display: flex; gap: 5px; flex-wrap: wrap; }
-        #pending-imgs-bar { position: absolute; bottom: calc(100% + 6px); left: 0; right: 0; display: flex; gap: 5px; flex-wrap: wrap; padding: 0; }
+        #pending-imgs-bar {
+            flex: 0 0 auto;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 5px;
+            max-height: 0;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            opacity: 0;
+            pointer-events: none;
+            transition: max-height 0.22s ease, opacity 0.2s ease, margin 0.2s ease, padding 0.2s ease;
+        }
+        #pending-imgs-bar.visible {
+            max-height: 120px;
+            opacity: 1;
+            padding: 2px 0 6px;
+            margin-bottom: 2px;
+            pointer-events: auto;
+            overflow: visible;
+        }
         .att-chip .att-del { opacity: 0.3; margin-left: 2px; font-size: 10px; line-height: 1; }
         .att-chip .att-del:hover { opacity: 0.7; }
 
@@ -1298,6 +1359,8 @@
             <input type="file" id="img-file-input" accept="image/*" multiple style="display:none" onchange="handleImgFiles(this.files)">
             <div id="input-container">
                 <div class="input-box-wrapper">
+                    <div id="kanso-autoscroll-hint" aria-live="polite" aria-atomic="true"></div>
+                    <div id="pending-imgs-bar" aria-live="polite"></div>
                     <div class="input-box">
                         <textarea id="message-input" placeholder="有什么，尽管问" rows="1"></textarea>
                         <span id="send-btn-wrap">
@@ -1571,6 +1634,7 @@
                         <div class="shortcut-item"><span>放大/收起输入框</span> <button class="shortcut-btn" id="sc-expandInput" onclick="listenShortcut('expandInput')"></button></div>
                         <div class="shortcut-item"><span>打开/关闭系统提示词窗口</span> <button class="shortcut-btn" id="sc-sysPromptPopup" onclick="listenShortcut('sysPromptPopup')"></button></div>
                         <div class="shortcut-item"><span>宽屏展开/收起边栏</span> <button class="shortcut-btn" id="sc-toggleSidebar" onclick="listenShortcut('toggleSidebar')"></button></div>
+                        <div class="shortcut-item"><span>切换自动下拉到底部</span> <button class="shortcut-btn" id="sc-toggleAutoScroll" onclick="listenShortcut('toggleAutoScroll')"></button></div>
                         <div class="shortcut-item"><span>向左/右无缝切对话</span>
                             <div style="display:flex; gap:5px;"><button class="shortcut-btn" id="sc-switchPrev" onclick="listenShortcut('switchPrev')" style="min-width: 40px;"></button> <button class="shortcut-btn" id="sc-switchNext" onclick="listenShortcut('switchNext')" style="min-width: 40px;"></button></div>
                         </div>
@@ -2340,9 +2404,14 @@
             updateModelPillTooltip(m);
         }
 
-        const defaultShortcuts = { newChat: 'KeyN', expandInput: 'KeyI', sysPromptPopup: 'KeyP', toggleSidebar: 'KeyB', jumpUp: 'ArrowUp', jumpDown: 'ArrowDown', switchPrev: 'ArrowLeft', switchNext: 'ArrowRight' };
-        let userShortcuts = { ...defaultShortcuts, ...(JSON.parse(localStorage.getItem('gemini_shortcuts')) || {}) };
+        const defaultShortcuts = { newChat: 'KeyN', expandInput: 'KeyI', sysPromptPopup: 'KeyP', toggleSidebar: 'KeyB', toggleAutoScroll: 'KeyD', jumpUp: 'ArrowUp', jumpDown: 'ArrowDown', switchPrev: 'ArrowLeft', switchNext: 'ArrowRight' };
+        const rawShortcuts = JSON.parse(localStorage.getItem('gemini_shortcuts')) || {};
+        let userShortcuts = { ...defaultShortcuts, ...rawShortcuts };
         delete userShortcuts.jumpBottom;
+        if (['KeyA', 'End'].includes(userShortcuts.toggleAutoScroll)) {
+            userShortcuts.toggleAutoScroll = 'KeyD';
+            localStorage.setItem('gemini_shortcuts', JSON.stringify(userShortcuts));
+        }
         let isListeningShortcut = null;
 
         const renderer = {
@@ -2854,7 +2923,13 @@
             if (typeof ResizeObserver !== 'undefined' && dom.chatList) {
                 new ResizeObserver(updateSidebarSettingsDividerVisibility).observe(dom.chatList);
             }
+            const inputDock = document.getElementById('input-container');
+            if (typeof ResizeObserver !== 'undefined' && inputDock) {
+                new ResizeObserver(syncInputDockHeight).observe(inputDock);
+            }
             window.addEventListener('resize', updateSidebarSettingsDividerVisibility);
+            window.addEventListener('resize', syncInputDockHeight);
+            syncInputDockHeight();
             // 初始化预设 UI
             renderPopupPresets();
             renderSettingsPromptTab();
@@ -3253,6 +3328,29 @@
 
         function formatKey(code) { return code.replace('Key', '').replace('Digit', '').replace('ArrowUp', '↑').replace('ArrowDown', '↓').replace('ArrowLeft', '←').replace('ArrowRight', '→').replace('End', 'End'); }
 
+        function syncInputDockHeight() {
+            const el = document.getElementById('input-container');
+            if (!el) return;
+            const h = Math.round(el.getBoundingClientRect().height);
+            document.documentElement.style.setProperty('--input-height', Math.max(56, h) + 'px');
+        }
+
+        let inlineToastTimer = null;
+        function showSubtleInlineToast(message) {
+            const el = document.getElementById('kanso-autoscroll-hint');
+            if (!el) return;
+            el.textContent = message;
+            el.classList.remove('visible');
+            void el.offsetWidth;
+            el.classList.add('visible');
+            requestAnimationFrame(syncInputDockHeight);
+            clearTimeout(inlineToastTimer);
+            inlineToastTimer = setTimeout(() => {
+                el.classList.remove('visible');
+                syncInputDockHeight();
+            }, 1600);
+        }
+
         function renderShortcutsUI() {
             Object.keys(userShortcuts).forEach(k => {
                 const btn = document.getElementById('sc-' + k);
@@ -3333,7 +3431,7 @@
             dom.queueRow.style.opacity = val ? '1' : '0.4'; dom.queueRow.style.pointerEvents = val ? 'auto' : 'none';
         }
 
-        function setAutoScrollBottom(val) {
+        function setAutoScrollBottom(val, opts) {
             autoScrollBottom = val;
             localStorage.setItem('gemini_auto_scroll_bottom', val);
             document.querySelectorAll('button[data-autoscroll-val]').forEach(b => b.classList.remove('active'));
@@ -3344,6 +3442,9 @@
             }
             if (autoScrollBottom) showJumpToBottomHint = false;
             updateJumpToBottomBtn();
+            if (opts && opts.subtleHint) {
+                showSubtleInlineToast(autoScrollBottom ? '自动滚动到底部： 开' : '自动滚动到底部： 关');
+            }
         }
 
         function setSystemPromptLabelInReplyMode(mode) {
@@ -3909,6 +4010,10 @@
                     if (e.code === userShortcuts.switchPrev) { e.preventDefault(); switchChatDirection(-1); }
                     if (e.code === userShortcuts.switchNext) { e.preventDefault(); switchChatDirection(1); }
                     if (e.code === userShortcuts.toggleSidebar) { toggleSidebar(); }
+                    if (e.code === userShortcuts.toggleAutoScroll) {
+                        e.preventDefault();
+                        setAutoScrollBottom(!autoScrollBottom, { subtleHint: true });
+                    }
                     if (e.code === userShortcuts.expandInput) {
                         const isExpanded = dom.input.classList.toggle('expanded');
                         if (!isExpanded) collapseInput();
@@ -4611,12 +4716,15 @@
         function handleImgFiles(files) { Array.from(files).forEach(addImgFile); document.getElementById('img-file-input').value = ''; }
 
         function renderPendingImgs() {
-            let bar = document.getElementById('pending-imgs-bar');
-            const wrapper = document.querySelector('.input-box-wrapper');
-            if (!wrapper) return;
-            if (!bar) { bar = document.createElement('div'); bar.id = 'pending-imgs-bar'; wrapper.appendChild(bar); }
+            const bar = document.getElementById('pending-imgs-bar');
+            if (!bar) return;
+            const wasVisible = bar.classList.contains('visible');
             bar.innerHTML = '';
-            if (!pendingImgs.length) { bar.remove(); return; }
+            if (!pendingImgs.length) {
+                bar.classList.remove('visible');
+                updateSendBtnState();
+                return;
+            }
             pendingImgs.forEach((img, i) => {
                 const chip = document.createElement('span'); chip.className = 'att-chip';
                 chip.innerHTML = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;opacity:0.45"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>' + '<span>' + img.name + '</span>' + '<div class="att-preview"><img src="data:' + img.mime + ';base64,' + img.b64 + '"></div>' + '<span class="att-del" onclick="event.stopPropagation();pendingImgs.splice(' + i + ',1);renderPendingImgs()">✕</span>';
@@ -4630,7 +4738,13 @@
                 });
                 bar.appendChild(chip);
             });
+            if (!wasVisible) {
+                bar.classList.remove('visible');
+                void bar.offsetWidth;
+            }
+            bar.classList.add('visible');
             updateSendBtnState();
+            requestAnimationFrame(syncInputDockHeight);
         }
 
         function openLightbox(src) {
