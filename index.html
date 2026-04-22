@@ -707,21 +707,60 @@
         .color-dot { width: 22px; height: 22px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: 0.2s; }
         .color-dot.active { transform: scale(1.2); border-color: var(--text-main); }
         .model-list { overflow-y: visible; border: 1px solid var(--border-color); border-radius: 8px; background: var(--input-bg); }
-        .model-item { border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; border-radius: 0; }
+        .model-item { border-bottom: 1px solid var(--border-color); border-radius: 0; }
         .model-item:last-child { border-bottom: none; }
-        .model-item span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; pointer-events: none; }
-        .model-item .model-actions { display: flex; gap: 5px; align-items: center; }
-        .model-item button { background: transparent; border: none; color: var(--text-muted); cursor: pointer; padding: 2px 6px; font-size: 12px; border-radius: 4px; transition: 0.2s; }
-        .model-item button:hover { background: var(--bg-sidebar-hover); color: var(--text-main); }
-        .model-item button.del-btn {
-            background: none; border: none; color: var(--text-muted); cursor: pointer;
-            opacity: 0; padding: 0 4px; display: flex; align-items: center;
-            transition: opacity 0.15s, color 0.15s;
+        .model-item-row {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            grid-template-areas:
+                "title actions"
+                "meta actions";
+            align-items: center;
+            column-gap: 8px;
+            row-gap: 2px;
+            padding: 9px 10px 9px 14px;
+            cursor: pointer;
         }
-        .model-item:hover .del-btn { opacity: 1; }
-        .model-item .del-btn:hover { background: none !important; color: var(--text-main) !important; opacity: 1; }
-        .model-item button.stream-btn { border: 1px solid transparent; }
-        .model-item button.stream-btn.active { background: var(--bg-sidebar-active); color: var(--text-main); border-color: var(--border-color); }
+        .model-item-row:active { cursor: grabbing; }
+        .model-item.dragging { opacity: 0.4; }
+        .model-item-title {
+            grid-area: title;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-main);
+            white-space: normal;
+            overflow-wrap: anywhere;
+            min-width: 0;
+        }
+        .model-item-meta {
+            grid-area: meta;
+            font-size: 11px;
+            color: var(--text-muted);
+            white-space: normal;
+            overflow-wrap: anywhere;
+            min-width: 0;
+        }
+        .model-item-actions { grid-area: actions; display: flex; align-items: center; gap: 3px; flex-shrink: 0; }
+        .model-item-actions button { background: transparent; border: none; color: var(--text-muted); cursor: pointer; padding: 0 4px; display: flex; align-items: center; }
+        .model-item-actions button:hover { color: var(--text-main); }
+        .model-expand-btn { opacity: 0.7; transition: transform 0.15s ease, opacity 0.15s ease; }
+        .model-item.is-open .model-expand-btn { transform: rotate(180deg); opacity: 1; }
+        .model-item-edit-area {
+            display: none;
+            padding: 0 14px 12px;
+            border-top: 1px dashed var(--border-color);
+            flex-direction: column;
+            gap: 8px;
+        }
+        .model-item-edit-area.open { display: flex; }
+        .model-edit-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .model-edit-label { width: 70px; font-size: 12px; color: var(--text-muted); flex-shrink: 0; }
+        .model-alias-input {
+            flex: 1; min-width: 0; height: 28px; padding: 0 10px; box-sizing: border-box;
+            border: 1px solid var(--border-color); border-radius: 6px; background: var(--input-bg);
+            color: var(--text-main); font-size: 13px; font-family: inherit; outline: none;
+        }
+        .model-alias-input:focus { border-color: var(--msg-user); }
         .model-item select.thinking-level-select {
             font-size: 13px;
             line-height: 1.35;
@@ -735,6 +774,13 @@
             color: var(--text-main);
             cursor: pointer;
         }
+        .model-stream-switch {
+            display: inline-flex; align-items: center; gap: 7px;
+            border: 1px solid var(--border-color); border-radius: 6px;
+            padding: 3px 8px; background: var(--bg-sidebar); cursor: pointer;
+            color: var(--text-main); font-size: 12px;
+        }
+        .model-stream-switch:hover { background: var(--bg-sidebar-hover); }
         .model-item select.thinking-level-select option {
             font-size: 13px;
             font-family: inherit;
@@ -743,6 +789,49 @@
         .add-model-row input { flex: 1; padding: 8px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 13px; background: var(--input-bg); color: var(--text-main); outline: none; }
         .add-model-row button { padding: 0 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-sidebar); cursor: pointer; color: var(--text-main); font-size: 13px; }
         .add-model-row button:hover { background: var(--bg-sidebar-hover); }
+        .model-ref-links {
+            margin-top: 10px;
+            padding: 10px 12px;
+            border: 1px dashed var(--border-color);
+            border-radius: 8px;
+            background: var(--input-bg);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .model-ref-links-title {
+            font-size: 12px;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+        .model-ref-link-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        .model-ref-link {
+            border: 1px solid var(--border-color);
+            background: var(--bg-sidebar);
+            color: var(--text-main);
+            border-radius: 999px;
+            padding: 4px 10px;
+            font-size: 12px;
+            transition: background 0.15s, border-color 0.15s;
+            white-space: normal;
+            overflow-wrap: anywhere;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+        }
+        .model-ref-link:hover {
+            background: var(--bg-sidebar-hover);
+            border-color: var(--text-muted);
+        }
+        .model-ref-links-note {
+            font-size: 11px;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
         .shortcut-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px dashed var(--border-color); font-size: 13px; color: var(--text-main); }
         .shortcut-item:last-child { border-bottom: none; }
         .shortcut-btn { background: var(--bg-sidebar); border: 1px solid var(--border-color); padding: 4px 10px; border-radius: 6px; color: var(--text-main); font-size: 12px; cursor: pointer; transition: 0.2s; font-family: monospace; min-width: 80px; }
@@ -1649,6 +1738,16 @@
                             <input type="text" id="add-model-input" placeholder="添加模型 (可重复添加同一模型名以分别配置思考/流式等)">
                             <button onclick="addNewModel()">添加</button>
                         </div>
+                        <div class="model-ref-links">
+                            <div class="model-ref-links-title">最新模型 ID 官方入口</div>
+                            <div class="model-ref-link-row">
+                                <a class="model-ref-link" href="https://ai.google.dev/gemini-api/docs/models" target="_blank" rel="noopener noreferrer">Gemini 模型列表</a>
+                                <a class="model-ref-link" href="https://developers.openai.com/api/docs/models/all" target="_blank" rel="noopener noreferrer">OpenAI 模型列表</a>
+                                <a class="model-ref-link" href="https://docs.anthropic.com/en/docs/about-claude/models/all-models" target="_blank" rel="noopener noreferrer">Claude 模型列表</a>
+                                <a class="model-ref-link" href="https://docs.x.ai/developers/models" target="_blank" rel="noopener noreferrer">xAI / Grok 模型列表</a>
+                            </div>
+                            <div class="model-ref-links-note">建议直接从以上官方页面复制模型 ID；可用性以你的账号权限和地区为准。</div>
+                        </div>
                     </div>
                 </div>
 
@@ -1853,6 +1952,7 @@
         let replyPrefixDisplayMode = localStorage.getItem('gemini_reply_prefix_display_mode') || 'top';
         let dimSidebarTitleText = localStorage.getItem('gemini_dim_sidebar_title_text') === 'true';
         let autoScrollHintStyle = localStorage.getItem('gemini_autoscroll_hint_style') || 'minimal';
+        let expandedModelEntryId = localStorage.getItem('gemini_expanded_model_entry_id') || '';
         /** mod_enter：Cmd/Ctrl+Enter 发送；enter_send：Enter 发送、Shift+Enter 换行 */
         let enterSendMode = localStorage.getItem('gemini_enter_send_mode') || 'mod_enter';
         /** first：侧边栏截断标题取当前段第一条用户提问；last：取最新一条用户提问 */
@@ -1864,9 +1964,9 @@
 
         const defaultModels = [
             { provider: 'gemini', model: 'gemini-3.1-pro-preview' },
-            { provider: 'openai', model: 'gpt-4o-mini' },
-            { provider: 'anthropic', model: 'claude-3-5-sonnet-latest' },
-            { provider: 'xai', model: 'grok-2-latest' }
+            { provider: 'openai', model: 'gpt-5.4' },
+            { provider: 'anthropic', model: 'claude-sonnet-4-6' },
+            { provider: 'xai', model: 'grok-4.20-0309-reasoning' }
         ];
 
         function normalizeModelProvider(p) {
@@ -2431,6 +2531,7 @@
             const lbl = document.getElementById('model-pill-label');
             if (lbl) lbl.textContent = getModelAlias(m);
             updateModelPillTooltip(m);
+            updateSearchBtnUI();
         }
 
         const defaultShortcuts = { newChat: 'KeyN', expandInput: 'KeyI', sysPromptPopup: 'KeyP', toggleSidebar: 'KeyB', toggleAutoScroll: 'KeyD', jumpUp: 'ArrowUp', jumpDown: 'ArrowDown', switchPrev: 'ArrowLeft', switchNext: 'ArrowRight' };
@@ -3252,39 +3353,80 @@
                 if (tl !== (modelConfigs[m].thinkingLevel || '').trim()) { modelConfigs[m].thinkingLevel = tl; localStorage.setItem('gemini_model_configs', JSON.stringify(modelConfigs)); }
                 const isStream = modelConfigs[m].stream === true;
                 const alias = modelConfigs[m].alias || '';
-                const div = document.createElement('div');
-                div.className = 'model-item drag-item'; div.draggable = true; div.dataset.val = m;
-                const nameSpan = document.createElement('span'); nameSpan.title = `${providerLabel(entry.provider)}\n${entry.model}\n${entry.id}`; nameSpan.textContent = (index + 1) + '. ' + providerLabel(entry.provider) + ' · ' + entry.model;
-                const actions = document.createElement('div'); actions.className = 'model-actions';
-                const aliasBtn = document.createElement('button');
-                aliasBtn.title = alias ? '简称: ' + alias : '设置简称';
-                aliasBtn.textContent = alias ? alias : '简称';
-                aliasBtn.style.cssText = 'font-style:' + (alias ? 'normal' : 'italic') + ';opacity:' + (alias ? '1' : '0.45') + ';';
-                aliasBtn.onclick = function() {
-                    const cur = modelConfigs[m] && modelConfigs[m].alias ? modelConfigs[m].alias : '';
-                    const input = document.createElement('input');
-                    input.type = 'text'; input.value = cur; input.placeholder = '输入简称，回车确认';
-                    input.style.cssText = 'width:80px;padding:1px 5px;border:1px solid var(--border-color);border-radius:4px;font-size:12px;background:var(--input-bg);color:var(--text-main);outline:none;';
-                    aliasBtn.replaceWith(input); input.focus(); input.select();
-                    const finish = () => { setModelAlias(m, input.value.trim()); renderSettingsModels(); };
-                    input.addEventListener('blur', finish);
-                    input.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); input.blur(); } if (e.key === 'Escape') { input.value = cur; input.blur(); } });
+
+                const item = document.createElement('div');
+                item.className = 'settings-preset-item model-item';
+                item.draggable = true;
+                item.dataset.val = m;
+
+                const row = document.createElement('div');
+                row.className = 'settings-preset-item-row';
+
+                const handle = document.createElement('span');
+                handle.className = 'settings-preset-drag-handle';
+                handle.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="5" r="1" fill="currentColor"/><circle cx="15" cy="5" r="1" fill="currentColor"/><circle cx="9" cy="12" r="1" fill="currentColor"/><circle cx="15" cy="12" r="1" fill="currentColor"/><circle cx="9" cy="19" r="1" fill="currentColor"/><circle cx="15" cy="19" r="1" fill="currentColor"/></svg>';
+
+                const info = document.createElement('div');
+                info.style.cssText = 'flex:1;min-width:0;display:flex;flex-direction:column;gap:1px;cursor:pointer;overflow:hidden;';
+                const nameEl = document.createElement('div');
+                nameEl.className = 'settings-preset-name';
+                nameEl.title = `${providerLabel(entry.provider)}\n${entry.model}\n${entry.id}`;
+                nameEl.textContent = (index + 1) + '. ' + providerLabel(entry.provider) + ' · ' + entry.model;
+                const previewEl = document.createElement('div');
+                previewEl.className = 'settings-preset-preview';
+                const metaParts = [];
+                if (alias && alias.trim()) metaParts.push('简称: ' + alias.trim());
+                metaParts.push('流式: ' + (isStream ? '开' : '关'));
+                if (tl) metaParts.push('思考: ' + tl);
+                previewEl.textContent = metaParts.join(' | ');
+                info.appendChild(nameEl);
+                info.appendChild(previewEl);
+
+                const delBtn = document.createElement('button');
+                delBtn.className = 'settings-preset-del-btn';
+                delBtn.title = '删除';
+                delBtn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+                delBtn.onclick = (function(entryId){ return function(e){ e.stopPropagation(); confirmDeleteModel(entryId, e); }; })(m);
+
+                row.appendChild(handle);
+                row.appendChild(info);
+                row.appendChild(delBtn);
+
+                const editArea = document.createElement('div');
+                editArea.className = 'settings-preset-edit-area';
+                if (expandedModelEntryId === m) editArea.classList.add('open');
+
+                info.onclick = () => {
+                    const isOpen = editArea.classList.contains('open');
+                    list.querySelectorAll('.settings-preset-edit-area.open').forEach(a => a.classList.remove('open'));
+                    expandedModelEntryId = isOpen ? '' : m;
+                    localStorage.setItem('gemini_expanded_model_entry_id', expandedModelEntryId);
+                    if (!isOpen) editArea.classList.add('open');
                 };
-                const streamToggle = document.createElement('button');
-                streamToggle.className = 'stream-btn'; streamToggle.title = '流式输出（打字机效果）';
-                streamToggle.style.cssText = 'display:flex;align-items:center;gap:5px;';
-                const toggleTrack = document.createElement('span');
-                toggleTrack.style.cssText = 'display:inline-block;width:26px;height:14px;border-radius:7px;background:' + (isStream ? 'var(--text-muted)' : 'var(--border-color)') + ';position:relative;transition:background .2s;flex-shrink:0;';
-                const toggleThumb = document.createElement('span');
-                toggleThumb.style.cssText = 'position:absolute;top:2px;left:' + (isStream ? '12px' : '2px') + ';width:10px;height:10px;border-radius:50%;background:var(--bg-main);transition:left .2s;';
-                toggleTrack.appendChild(toggleThumb);
-                const toggleLabel = document.createElement('span'); toggleLabel.textContent = '流式';
-                streamToggle.appendChild(toggleTrack); streamToggle.appendChild(toggleLabel);
-                streamToggle.onclick = (function(entryId){ return function(){ toggleModelStream(entryId); }; })(m);
+
+                const aliasRow = document.createElement('div');
+                aliasRow.className = 'model-edit-row';
+                const aliasLabel = document.createElement('div');
+                aliasLabel.className = 'model-edit-label';
+                aliasLabel.textContent = '简称';
+                const aliasInput = document.createElement('input');
+                aliasInput.className = 'model-alias-input';
+                aliasInput.type = 'text';
+                aliasInput.placeholder = '选填：用于回复前缀显示';
+                aliasInput.value = alias;
+                aliasInput.onchange = (function(entryId){ return function(){ setModelAlias(entryId, aliasInput.value.trim()); renderSettingsModels(); }; })(m);
+                aliasRow.appendChild(aliasLabel);
+                aliasRow.appendChild(aliasInput);
+
+                const thinkingRow = document.createElement('div');
+                thinkingRow.className = 'model-edit-row';
+                const thinkingLabel = document.createElement('div');
+                thinkingLabel.className = 'model-edit-label';
+                thinkingLabel.textContent = '思考强度';
                 const thinkingSel = document.createElement('select');
                 thinkingSel.className = 'thinking-level-select';
                 thinkingSel.title = '思考强度 thinkingLevel（Gemini 3）；默认=不发送该参数';
-                [['', '思考:默认'], ['minimal', 'minimal'], ['low', 'low'], ['medium', 'medium'], ['high', 'high']].forEach(([val, label]) => {
+                [['', '默认'], ['minimal', 'minimal'], ['low', 'low'], ['medium', 'medium'], ['high', 'high']].forEach(([val, label]) => {
                     const opt = document.createElement('option');
                     opt.value = val; opt.textContent = label; if (val === tl) opt.selected = true;
                     thinkingSel.appendChild(opt);
@@ -3295,14 +3437,39 @@
                         const v = thinkingSel.value.trim();
                         modelConfigs[entryId].thinkingLevel = v && validThinkingLevels.includes(v) ? v : '';
                         localStorage.setItem('gemini_model_configs', JSON.stringify(modelConfigs));
+                        renderSettingsModels();
                     };
                 })(m);
-                const delBtn = document.createElement('button');
-                delBtn.className = 'del-btn'; delBtn.title = '删除';
-                delBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
-                delBtn.onclick = (function(entryId){ return function(e){ e.stopPropagation(); confirmDeleteModel(entryId, e); }; })(m);
-                actions.appendChild(aliasBtn); actions.appendChild(thinkingSel); actions.appendChild(streamToggle); actions.appendChild(delBtn);
-                div.appendChild(nameSpan); div.appendChild(actions); list.appendChild(div);
+                thinkingRow.appendChild(thinkingLabel);
+                thinkingRow.appendChild(thinkingSel);
+
+                const streamRow = document.createElement('div');
+                streamRow.className = 'model-edit-row';
+                const streamLabel = document.createElement('div');
+                streamLabel.className = 'model-edit-label';
+                streamLabel.textContent = '流式输出';
+                const streamToggle = document.createElement('button');
+                streamToggle.className = 'model-stream-switch';
+                streamToggle.title = '流式输出（打字机效果）';
+                const toggleTrack = document.createElement('span');
+                toggleTrack.style.cssText = 'display:inline-block;width:26px;height:14px;border-radius:7px;background:' + (isStream ? 'var(--text-muted)' : 'var(--border-color)') + ';position:relative;transition:background .2s;flex-shrink:0;';
+                const toggleThumb = document.createElement('span');
+                toggleThumb.style.cssText = 'position:absolute;top:2px;left:' + (isStream ? '12px' : '2px') + ';width:10px;height:10px;border-radius:50%;background:var(--bg-main);transition:left .2s;';
+                toggleTrack.appendChild(toggleThumb);
+                const toggleLabel = document.createElement('span');
+                toggleLabel.textContent = isStream ? '开启' : '关闭';
+                streamToggle.appendChild(toggleTrack);
+                streamToggle.appendChild(toggleLabel);
+                streamToggle.onclick = (function(entryId){ return function(){ toggleModelStream(entryId); }; })(m);
+                streamRow.appendChild(streamLabel);
+                streamRow.appendChild(streamToggle);
+
+                editArea.appendChild(aliasRow);
+                editArea.appendChild(thinkingRow);
+                editArea.appendChild(streamRow);
+                item.appendChild(row);
+                item.appendChild(editArea);
+                list.appendChild(item);
             });
         }
 
@@ -4269,11 +4436,22 @@
             btn.appendChild(t);
         }
 
+        function providerSupportsSearch(provider) {
+            // 当前实现仅接入 Gemini GoogleSearch 与 xAI web_search
+            return provider === 'gemini' || provider === 'xai';
+        }
+        function getSearchStatusText() {
+            const modelId = getCurrentModel();
+            const provider = getModelProvider(modelId);
+            const onOff = isSearchEnabled ? '已开启' : '已关闭';
+            if (!providerSupportsSearch(provider)) return `联网搜索${onOff}（当前模型暂不支持）`;
+            return `联网搜索${onOff}`;
+        }
         function toggleSearch() { isSearchEnabled = !isSearchEnabled; localStorage.setItem('gemini_search', isSearchEnabled); updateSearchBtnUI(); }
         function updateSearchBtnUI() {
             dom.searchBtn.classList.toggle('active', isSearchEnabled);
             const tooltip = dom.searchBtn.querySelector('.sp-tooltip');
-            if (tooltip) tooltip.textContent = isSearchEnabled ? '联网搜索已开启' : '联网搜索已关闭';
+            if (tooltip) tooltip.textContent = getSearchStatusText();
         }
         function openSettings() { isListeningShortcut = null; renderShortcutsUI(); document.getElementById('settings-modal').style.display = 'flex'; }
         function closeSettings() {
@@ -4883,7 +5061,18 @@
 
             let startIndex = 0;
             for (let i = targetChat.history.length - 1; i >= 0; i--) { if (targetChat.history[i].role === 'divider') { startIndex = i + 1; break; } }
-            let validContext = targetChat.history.slice(startIndex).filter(m => m.role === 'user' || m.role === 'model');
+            const shouldIncludeInContext = (m) => {
+                if (!m || (m.role !== 'user' && m.role !== 'model')) return false;
+                if (m.role !== 'model') return true;
+                if (m._isErrorReply || m._isCanceledReply) return false;
+                const txt = (getTextFromParts(m.parts || []) || '').trim();
+                if (!txt) return false;
+                // 兼容历史数据：此前的错误/中止文案没有打标，需要按文本兜底过滤
+                if (txt.startsWith('请求失败:')) return false;
+                if (txt.includes('*(用户已手动中止生成)*')) return false;
+                return true;
+            };
+            let validContext = targetChat.history.slice(startIndex).filter(shouldIncludeInContext);
 
             if (historyLimit !== 999 && validContext.length > 0) {
                 const currentPrompt = validContext.pop();
@@ -4951,12 +5140,28 @@
             let requestUrl = '';
             let requestBody = {};
             let headers = { 'Content-Type': 'application/json' };
+            let useXaiResponsesApi = false;
             if (provider === 'openai' || provider === 'xai') {
-                requestUrl = provider === 'openai' ? 'https://api.openai.com/v1/chat/completions' : 'https://api.x.ai/v1/chat/completions';
-                const messages = [];
-                if (spTrim) messages.push({ role: 'system', content: spTrim });
-                messages.push(...chatApiMessages);
-                requestBody = { model: modelName, messages, stream: !!isStream };
+                if (provider === 'xai' && isSearchEnabled) {
+                    // xAI 已弃用 chat/completions live search；联网时改走 Responses API + web_search
+                    useXaiResponsesApi = true;
+                    requestUrl = 'https://api.x.ai/v1/responses';
+                    const input = [];
+                    if (spTrim) input.push({ role: 'system', content: spTrim });
+                    input.push(...chatApiMessages);
+                    requestBody = {
+                        model: modelName,
+                        input,
+                        stream: false,
+                        tools: [{ type: 'web_search' }]
+                    };
+                } else {
+                    requestUrl = provider === 'openai' ? 'https://api.openai.com/v1/chat/completions' : 'https://api.x.ai/v1/chat/completions';
+                    const messages = [];
+                    if (spTrim) messages.push({ role: 'system', content: spTrim });
+                    messages.push(...chatApiMessages);
+                    requestBody = { model: modelName, messages, stream: !!isStream };
+                }
                 headers.Authorization = `Bearer ${apiKey}`;
             } else if (provider === 'anthropic') {
                 requestUrl = 'https://api.anthropic.com/v1/messages';
@@ -5000,6 +5205,15 @@
                     const arr = Array.isArray(data.content) ? data.content : [];
                     return arr.filter(x => x && x.type === 'text').map(x => x.text || '').join('');
                 }
+                if (provider === 'xai' && useXaiResponsesApi) {
+                    const out = Array.isArray(data.output) ? data.output : [];
+                    const msg = out.find(x => x && (x.type === 'message' || x.role === 'assistant')) || null;
+                    const c = msg && Array.isArray(msg.content) ? msg.content : [];
+                    const text = c.filter(x => x && (x.type === 'output_text' || x.type === 'text')).map(x => x.text || '').join('');
+                    if (text) return text;
+                    if (typeof data.output_text === 'string') return data.output_text;
+                    return '';
+                }
                 const msg = data.choices && data.choices[0] && data.choices[0].message;
                 if (msg && typeof msg.content === 'string') return msg.content;
                 if (msg && Array.isArray(msg.content)) return msg.content.map(c => c && (c.text || c.content || '')).join('');
@@ -5029,20 +5243,31 @@
                 const response = await fetch(requestUrl, { method: 'POST', headers, body: JSON.stringify(requestBody), signal: abortControllers[targetChat.id].signal });
                 if (!response.ok) {
                     const raw = await response.text();
-                    let errMsg = '请求失败';
+                    let errMsg = `请求失败（HTTP ${response.status}）`;
                     try {
                         const errData = JSON.parse(raw);
-                        errMsg = (errData.error && errData.error.message) ? errData.error.message : errMsg;
+                        const candidates = [
+                            errData && errData.error && errData.error.message,
+                            errData && errData.message,
+                            errData && errData.detail,
+                            errData && Array.isArray(errData.errors) && errData.errors[0] && (errData.errors[0].message || errData.errors[0].detail),
+                        ].filter(v => typeof v === 'string' && v.trim());
+                        if (candidates.length) {
+                            errMsg = candidates[0];
+                        } else {
+                            const compact = JSON.stringify(errData);
+                            if (compact && compact !== '{}' && compact !== 'null') errMsg = compact.slice(0, 700);
+                        }
                     } catch (_) {
-                        if (raw && raw.length < 500) errMsg = raw;
+                        if (raw && raw.trim()) errMsg = raw.trim().slice(0, 700);
                     }
-                    throw new Error(errMsg);
+                    throw new Error(`[${providerLabel(provider)} / ${modelName}] ${errMsg}`);
                 }
 
                 let finalReplyText = "";
                 const loadingIdx = targetChat.history.indexOf(loadingObj);
 
-                if (!isStream) {
+                if (!isStream || useXaiResponsesApi) {
                     const data = await response.json();
                     const text = extractFinalText(data);
                     finalReplyText = text ? text : '（模型返回了空内容；可能是安全过滤、无候选或接口格式变化。）';
@@ -5102,12 +5327,12 @@
                     if (loadingIdx > -1) {
                         const baseText = document.getElementById(loadingId) ? document.getElementById(loadingId).innerText : "";
                         const canceledText = baseText && !baseText.includes("思考中") ? baseText + "\n\n*(用户已手动中止生成)*" : "*(用户已手动中止生成)*";
-                        targetChat.history[loadingIdx] = { role: "model", parts: [{ text: canceledText }] };
+                        targetChat.history[loadingIdx] = { role: "model", parts: [{ text: canceledText }], _isCanceledReply: true };
                     }
                     saveData();
                 } else {
                     if (loadingIdx > -1) targetChat.history.splice(loadingIdx, 1);
-                    targetChat.history.push({ role: "model", parts: [{ text: '请求失败: ' + error.message }] });
+                    targetChat.history.push({ role: "model", parts: [{ text: '请求失败: ' + error.message }], _isErrorReply: true });
                     saveData();
                 }
             } finally {
