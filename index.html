@@ -1841,7 +1841,7 @@
                         <kbd>Cmd/Ctrl + F</kbd> 搜索当前对话 <br>
                         <kbd>Cmd/Ctrl + K</kbd> 插入/撤销上下文清除线 <br>
                         <kbd>Cmd/Ctrl + 点击删除</kbd> 免确认极速删除对话 <br>
-                        <kbd>Alt/Option + 1~9</kbd> 快速切换专属模型 <br>
+                        <kbd>Alt/Option + M</kbd> 展开模型菜单 <br>
                         <kbd>Alt/Option + Shift + ↑</kbd> 跳到当前对话顶部 · <kbd>Alt/Option + Shift + ↓</kbd> 跳到底部 <br>
                         <kbd>单击代码块任意处</kbd> 极速复制代码
                     </div>
@@ -3856,7 +3856,7 @@
                 `<div class="kanso-shortcut-item"><b>Alt+${fk(userShortcuts.jumpUp)}/${fk(userShortcuts.jumpDown)}</b>跳气泡</div>`,
                 `<div class="kanso-shortcut-item"><b>Alt+Shift+↑/↓</b>对话顶/底</div>`,
                 `<div class="kanso-shortcut-item"><b>Alt+${fk(userShortcuts.switchPrev)}/${fk(userShortcuts.switchNext)}</b>切对话</div>`,
-                `<div class="kanso-shortcut-item"><b>Alt+1~9</b>切换模型</div>`,
+                `<div class="kanso-shortcut-item"><b>Alt+M</b>展开模型菜单</div>`,
                 `<div class="kanso-shortcut-item"><b>Cmd/Ctrl+K</b>清除上下文</div>`,
                 `<div class="kanso-shortcut-item"><b>Alt+${fk(userShortcuts.newChat)}</b>新建对话</div>`
             ].join('');
@@ -4257,6 +4257,13 @@
                     if (document.getElementById('preset-name-dialog').classList.contains('active')) { closePresetNameDialog(); return; }
                     if (document.getElementById('search-panel').classList.contains('active')) { closeGlobalSearch(); return; }
                     if (document.getElementById('search-bar').classList.contains('active')) { closeSearch(); return; }
+                    const mdd = document.getElementById('model-dropdown');
+                    if (mdd && mdd.style.display === 'block') {
+                        mdd.style.display = 'none';
+                        refocusMessageInputSoft();
+                        syncHeaderHoverTooltipSuppression();
+                        return;
+                    }
                 }
 
                 if (isListeningShortcut) {
@@ -4281,6 +4288,10 @@
                 if (e.altKey && !e.ctrlKey && !e.metaKey) {
                     const isLetterOrDigit = e.code.startsWith('Key') || e.code.startsWith('Digit');
                     if (isLetterOrDigit) { e.preventDefault(); altShortcutFiredAt = Date.now(); }
+                    if (e.code === 'KeyM' && !e.shiftKey) {
+                        toggleModelDropdown();
+                        return;
+                    }
                     if (e.code === userShortcuts.newChat) { createNewChat(); }
                     if (!e.shiftKey && e.code === userShortcuts.jumpUp) { e.preventDefault(); jumpToMessage('up'); }
                     if (!e.shiftKey && e.code === userShortcuts.jumpDown) { e.preventDefault(); jumpToMessage('down'); }
@@ -4298,16 +4309,6 @@
                         dom.input.focus({ preventScroll: true });
                     }
                     if (e.code === userShortcuts.sysPromptPopup) { toggleSysPromptPopup(); }
-                    if (e.code.startsWith('Digit')) {
-                        const modelIndex = parseInt(e.code.replace('Digit', '')) - 1;
-                        if (modelIndex >= 0 && modelIndex < savedModels.length) {
-                            const entry = savedModels[modelIndex];
-                            dom.modelSelect.value = entry.id;
-                            let chat = chats.find(c => c.id == currentChatId);
-                            if (chat) { chat.model = entry.id; saveData(); }
-                            updateModelPill(entry.id);
-                        }
-                    }
                 }
 
                 if (document.activeElement === dom.input) {
@@ -4326,6 +4327,27 @@
                     toggleContextDivider();
                 }
             });
+
+            document.addEventListener('keydown', function modelDropdownDigitShortcut(e) {
+                if (e.isComposing) return;
+                const dd = document.getElementById('model-dropdown');
+                if (!dd || dd.style.display !== 'block') return;
+                if (!e.code.startsWith('Digit')) return;
+                const n = parseInt(e.code.replace('Digit', ''), 10);
+                if (n < 1 || n > 9) return;
+                const modelIndex = n - 1;
+                if (modelIndex >= savedModels.length) return;
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                const entry = savedModels[modelIndex];
+                dom.modelSelect.value = entry.id;
+                let chat = chats.find(c => c.id == currentChatId);
+                if (chat) { chat.model = entry.id; saveData(); }
+                updateModelPill(entry.id);
+                dd.style.display = 'none';
+                syncHeaderHoverTooltipSuppression();
+                refocusMessageInputSoft();
+            }, true);
 
             document.addEventListener('click', (e) => {
                 // 关闭 context menu（点击 settings-modal 内部也关）
@@ -5056,20 +5078,23 @@
         }
 
         function toggleModelDropdown(e) {
-            e.stopPropagation();
+            if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
             const dd = document.getElementById('model-dropdown');
             const isOpen = dd.style.display === 'block';
             if (isOpen) { dd.style.display = 'none'; refocusMessageInputSoft(); syncHeaderHoverTooltipSuppression(); return; }
             dd.innerHTML = '';
             const cur = getCurrentModel();
-            savedModels.forEach(e => {
+            savedModels.forEach((entry, idx) => {
                 const item = document.createElement('div');
-                const active = e.id === cur;
-                item.style.cssText = 'padding:8px 14px;font-size:13px;cursor:pointer;color:var(--text-main);display:flex;flex-direction:column;gap:1px;background:' + (active ? 'var(--bg-sidebar-active)' : 'transparent') + ';';
-                item.innerHTML = '<span style="font-weight:' + (active ? '600' : '400') + ';">' + getModelAlias(e.id) + '</span><span style="font-size:11px;color:var(--text-muted);font-family:monospace;">' + providerLabel(e.provider) + ' · ' + e.model + '</span>';
+                const active = entry.id === cur;
+                item.style.cssText = 'padding:8px 14px;font-size:13px;cursor:pointer;color:var(--text-main);display:flex;flex-direction:row;align-items:center;gap:10px;background:' + (active ? 'var(--bg-sidebar-active)' : 'transparent') + ';';
+                const keyBadge = idx < 9
+                    ? '<span style="flex:0 0 auto;min-width:22px;height:22px;padding:0 6px;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;font-family:ui-monospace,monospace;color:var(--text-muted);background:var(--bg-input);border:1px solid var(--border-color);">' + (idx + 1) + '</span>'
+                    : '<span style="flex:0 0 22px;width:22px;"></span>';
+                item.innerHTML = keyBadge + '<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:1px;"><span style="font-weight:' + (active ? '600' : '400') + ';">' + getModelAlias(entry.id) + '</span><span style="font-size:11px;color:var(--text-muted);font-family:monospace;">' + providerLabel(entry.provider) + ' · ' + entry.model + '</span></div>';
                 item.onmouseenter = () => { item.style.background = 'var(--bg-sidebar-hover)'; };
                 item.onmouseleave = () => { item.style.background = active ? 'var(--bg-sidebar-active)' : 'transparent'; };
-                item.onclick = () => { dom.modelSelect.value = e.id; let chat = chats.find(c => c.id == currentChatId); if (chat) { chat.model = e.id; saveData(); } updateModelPill(e.id); dd.style.display = 'none'; refocusMessageInputSoft(); syncHeaderHoverTooltipSuppression(); };
+                item.onclick = () => { dom.modelSelect.value = entry.id; let chat = chats.find(c => c.id == currentChatId); if (chat) { chat.model = entry.id; saveData(); } updateModelPill(entry.id); dd.style.display = 'none'; refocusMessageInputSoft(); syncHeaderHoverTooltipSuppression(); };
                 dd.appendChild(item);
             });
             dd.style.display = 'block';
