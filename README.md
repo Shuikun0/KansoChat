@@ -48,7 +48,7 @@ KansoChat 是一款为深度交流设计的纯前端 AI 对话面板。从支持
 | <kbd>Alt</kbd> + <kbd>↑</kbd> <kbd>↓</kbd> | 快速切换历史对话 |
 | <kbd>Alt</kbd> + <kbd>F</kbd> | 切换沉浸式输入框 |
 | <kbd>Ctrl/Cmd</kbd> + <kbd>K</kbd> | 插入/撤销上下文清除线 |
-| <kbd>Alt</kbd> + <kbd>1~9</kbd>  | 极速切换自定义的专属模型 |
+| <kbd>Alt</kbd> + <kbd>M</kbd>  | 极速切换模型 |
 </ul>
 <br />
 
