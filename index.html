@@ -791,46 +791,43 @@
         .add-model-row button:hover { background: var(--bg-sidebar-hover); }
         .model-ref-links {
             margin-top: 10px;
-            padding: 10px 12px;
+            padding: 8px 10px;
             border: 1px dashed var(--border-color);
             border-radius: 8px;
             background: var(--input-bg);
             display: flex;
             flex-direction: column;
+            align-items: stretch;
             gap: 8px;
         }
-        .model-ref-links-title {
+        .model-ref-links-caption {
             font-size: 12px;
+            font-weight: 500;
             color: var(--text-muted);
-            font-weight: 600;
+            line-height: 1.45;
+            margin: 0;
         }
         .model-ref-link-row {
             display: flex;
             flex-wrap: wrap;
+            align-items: center;
             gap: 6px;
         }
         .model-ref-link {
             border: 1px solid var(--border-color);
             background: var(--bg-sidebar);
-            color: var(--text-main);
-            border-radius: 999px;
+            color: var(--text-muted);
+            border-radius: 6px;
             padding: 4px 10px;
             font-size: 12px;
-            transition: background 0.15s, border-color 0.15s;
-            white-space: normal;
-            overflow-wrap: anywhere;
+            font-weight: 500;
             text-decoration: none;
-            display: inline-flex;
-            align-items: center;
+            transition: background 0.15s, border-color 0.15s, color 0.15s;
         }
         .model-ref-link:hover {
             background: var(--bg-sidebar-hover);
             border-color: var(--text-muted);
-        }
-        .model-ref-links-note {
-            font-size: 11px;
-            color: var(--text-muted);
-            line-height: 1.5;
+            color: var(--text-main);
         }
         .shortcut-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px dashed var(--border-color); font-size: 13px; color: var(--text-main); }
         .shortcut-item:last-child { border-bottom: none; }
@@ -1780,7 +1777,7 @@
 
                 <div id="tab-models" class="settings-pane">
                     <h3>模型配置</h3>
-                    <div class="setting-block" style="margin-top: 10px;">
+                    <div class="setting-block">
                         <div class="model-list-heading-wrap">
                             <label>自定义模型列表 & 响应模式 (上下拖拽排序)</label>
                             <span class="thinking-info-wrap">
@@ -1803,20 +1800,19 @@
                             <input type="text" id="add-model-input" placeholder="添加模型 (可重复添加同一模型名以分别配置思考/流式等)">
                             <button onclick="addNewModel()">添加</button>
                         </div>
-                        <div class="model-ref-links">
-                            <div class="model-ref-links-title">最新模型 ID 官方入口</div>
-                            <div class="model-ref-link-row">
-                                <a class="model-ref-link" href="https://ai.google.dev/gemini-api/docs/models" target="_blank" rel="noopener noreferrer">Gemini 模型列表</a>
-                                <a class="model-ref-link" href="https://developers.openai.com/api/docs/models/all" target="_blank" rel="noopener noreferrer">OpenAI 模型列表</a>
-                                <a class="model-ref-link" href="https://docs.anthropic.com/en/docs/about-claude/models/all-models" target="_blank" rel="noopener noreferrer">Claude 模型列表</a>
-                                <a class="model-ref-link" href="https://docs.x.ai/developers/models" target="_blank" rel="noopener noreferrer">xAI / Grok 模型列表</a>
-                            </div>
-                            <div class="model-ref-links-note">建议直接从以上官方页面复制模型 ID；可用性以你的账号权限和地区为准。</div>
+                        <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 8px;">
+                            <label>全局默认模型</label>
+                            <select id="default-model-select" style="width: 100%; max-width: none;" onchange="saveDefaultModel()"></select>
                         </div>
-                    </div>
-                    <div class="setting-block" style="margin-top: 10px;">
-                        <label>全局默认模型</label>
-                        <select id="default-model-select" style="width: 100%; max-width: none;" onchange="saveDefaultModel()"></select>
+                        <div class="model-ref-links">
+                            <p class="model-ref-links-caption">官方模型文档</p>
+                            <div class="model-ref-link-row">
+                                <a class="model-ref-link" href="https://ai.google.dev/gemini-api/docs/models" target="_blank" rel="noopener noreferrer">Gemini</a>
+                                <a class="model-ref-link" href="https://developers.openai.com/api/docs/models/all" target="_blank" rel="noopener noreferrer">OpenAI</a>
+                                <a class="model-ref-link" href="https://docs.anthropic.com/en/docs/about-claude/models/all-models" target="_blank" rel="noopener noreferrer">Claude</a>
+                                <a class="model-ref-link" href="https://docs.x.ai/developers/models" target="_blank" rel="noopener noreferrer">xAI</a>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
