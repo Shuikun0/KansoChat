@@ -4334,8 +4334,8 @@
                 if (!dd || dd.style.display !== 'block') return;
                 if (!e.code.startsWith('Digit')) return;
                 const n = parseInt(e.code.replace('Digit', ''), 10);
-                if (n < 1 || n > 9) return;
-                const modelIndex = n - 1;
+                if (n < 0 || n > 9) return;
+                const modelIndex = n === 0 ? 9 : (n - 1);
                 if (modelIndex >= savedModels.length) return;
                 e.preventDefault();
                 e.stopImmediatePropagation();
@@ -5088,9 +5088,13 @@
                 const item = document.createElement('div');
                 const active = entry.id === cur;
                 item.style.cssText = 'padding:8px 14px;font-size:13px;cursor:pointer;color:var(--text-main);display:flex;flex-direction:row;align-items:center;gap:10px;background:' + (active ? 'var(--bg-sidebar-active)' : 'transparent') + ';';
-                const keyBadge = idx < 9
-                    ? '<span style="flex:0 0 auto;min-width:22px;height:22px;padding:0 6px;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;font-family:ui-monospace,monospace;color:var(--text-muted);background:var(--bg-input);border:1px solid var(--border-color);">' + (idx + 1) + '</span>'
-                    : '<span style="flex:0 0 22px;width:22px;"></span>';
+                const keyBadge = active
+                    ? '<span style="flex:0 0 22px;width:22px;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;font-family:ui-monospace,monospace;color:var(--text-muted);">•</span>'
+                    : (idx < 9
+                        ? '<span style="flex:0 0 auto;min-width:22px;height:22px;padding:0 6px;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;font-family:ui-monospace,monospace;color:var(--text-muted);background:var(--bg-input);border:1px solid var(--border-color);">' + (idx + 1) + '</span>'
+                        : (idx === 9
+                            ? '<span style="flex:0 0 auto;min-width:22px;height:22px;padding:0 6px;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;font-family:ui-monospace,monospace;color:var(--text-muted);background:var(--bg-input);border:1px solid var(--border-color);">0</span>'
+                            : '<span style="flex:0 0 auto;min-width:22px;height:22px;padding:0 6px;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;font-family:ui-monospace,monospace;color:var(--text-muted);background:var(--bg-input);border:1px solid var(--border-color);">-</span>'));
                 item.innerHTML = keyBadge + '<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:1px;"><span style="font-weight:' + (active ? '600' : '400') + ';">' + getModelAlias(entry.id) + '</span><span style="font-size:11px;color:var(--text-muted);font-family:monospace;">' + providerLabel(entry.provider) + ' · ' + entry.model + '</span></div>';
                 item.onmouseenter = () => { item.style.background = 'var(--bg-sidebar-hover)'; };
                 item.onmouseleave = () => { item.style.background = active ? 'var(--bg-sidebar-active)' : 'transparent'; };
